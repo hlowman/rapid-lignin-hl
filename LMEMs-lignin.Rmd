@@ -1,0 +1,36 @@
+---
+title: "LMEMs-lignin"
+author: "Heili Lowman"
+date: "1/20/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Linear Mixed Effect Models
+
+This document was last updated on JANUARY 20, 2020.
+
+This is an R Markdown document that will walk through all of the LMEMs run for Chapter 3 of my dissertation and the resulting manuscript.
+
+```{r data and packages, include=FALSE}
+
+master <- read.csv("RAPID_Master_Datasheet_add_region_streamcode.csv") # Loads the newly updated dataset, as of April 8, 2019. 
+
+#Some of the column headers have been changed, including the ones containing the "micro" symbol, which R apparently cannot process. 
+#LTER_Site column - added so that naming convention is consistent, especially among stream sites which were entered differently in the "Site" column.
+#Group_2 column - added to split reef sites into groupings near and far from streams by date. 
+#Group_3 column - added to create regions from west to east as discussed with Matthieu.
+
+library(tidyverse)
+library(nlme)
+library(multcomp)
+library(lsmeans)
+
+# TOMORROW: I need to deal with NAs vs 0s, as well as cells that <0.01.
+
+```
+
+This is the end of the RMarkdown document.
