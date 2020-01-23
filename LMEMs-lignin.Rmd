@@ -23,14 +23,74 @@ master <- read.csv("RAPID_Master_Datasheet_add_region_streamcode.csv") # Loads t
 #LTER_Site column - added so that naming convention is consistent, especially among stream sites which were entered differently in the "Site" column.
 #Group_2 column - added to split reef sites into groupings near and far from streams by date. 
 #Group_3 column - added to create regions from west to east as discussed with Matthieu.
+# In addition, all NDs from Matthieu's original reports are replaced as NAs.
 
 library(tidyverse)
 library(nlme)
 library(multcomp)
 library(lsmeans)
 
-# TOMORROW: I need to deal with NAs vs 0s, as well as cells that <0.01.
+```
+
+First, I reviewed all of the columns that were added manually to the original dataset to make data grouping by date easier.
+
+Next, I am going to review the data in the tidyverse and make sure everything is in the correct numerical format and remove outliers for the *entirety* of the dataset.
+
+```{r tidying up, include=FALSE}
+
+# Format
+
+str(master) # Shows the format of each of the columns in the dataset.
+
+# Need to make Depth and Group_3 factors and convert C.N, C, and P numeric.
+
+master$Depthf <- as.factor(master$Depth) # Makes the water depth column a series of factors.
+
+master$Group_3f <- as.factor(master$Group_3) # Makes the regional column a series of factors.
+
+# I don't actually use the following columns in the analysis, but figured it's best to make these transformations just in case.
+
+master$C.Nnum <- as.numeric(master$C.N) # Makes the C:N column a series of numbers.
+
+master$Cnum <- as.numeric(master$C) # Makes the cinnamyl column a series of numbers.
+
+master$Pnum <- as.numeric(master$P) # Makes the p-phenol column a series of numbers.
+
+# NAs and 0s
+
+# The only "<0.01"s appear to be in the "C" column, so going to leave those since this column is not being analyzed in this code.
+
+# Upon further inspection of the dataset, I feel it makes the most sense to only alter those columns that are needed for the below analysis, so that's what I'll do. See below:
+
+# See e-mail correspondence with Matthieu on 1/22/2020: "ND does not mean 0. When doing analytical measurements using GC/MS or others detectors you never can say that you have 0. Indeed, due to analytical issues you have limits of quantification and limits of detection. To summarize, when you are under LOD, it does not mean that you do not have the presence of the analyte but that you cannot decipher it from the background."
+
+# So, all NAs that were previously NDs will be left as such since they are not actually a 0 value.
+
+# Outliers based on past models. I'm going to work through these and take a more conservative approach with removing outliers from the whole dataset.
+
+  # full (6)
+  # Sigma8 - 66
+  # Lambda - 164, 238 (choosing to keep in 161)
+  # S/V - 387 (choosing to keep in 282, 299, 301, 443)
+  # C/V - 389
+  # PVS - (choosing to keep in 21, 23)
+  # BdV - 300
+
+  # marine (1)
+  # Sigma8 - 56, 172 (238), (choosing to keep in 301 (367))
+  # Lambda - 172 (238) (choosing to keep in 374 (454))
+
+  # stream (0)
+  # Sigma8 - 2 (66)
+
+  # estuary (0)
+  # CV - 47 (389)
+
+# Alright, so the seven outliers I'm removing will be 56, 66, 164, 238, 300, 387, and 389 from the original dataset. I'll work backwards to preserve line numbers.
+
+mastered <- master[ -c(56, 66, 164, 238, 300, 387, 389), ] # Starts with the original dataset and then removes desired rows.
 
 ```
+
 
 This is the end of the RMarkdown document.
