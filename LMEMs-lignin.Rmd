@@ -70,23 +70,23 @@ master$Pnum <- as.numeric(master$P) # Makes the p-phenol column a series of numb
 
 # Outliers based on past models. I'm going to work through these and take a more conservative approach with removing outliers from the whole dataset.
 
-  # full (6)
-  # Sigma8 - 66
-  # Lambda - 164, 238 (choosing to keep in 161)
-  # S/V - 387 (choosing to keep in 282, 299, 301, 443)
-  # C/V - 389
-  # PVS - (choosing to keep in 21, 23)
-  # BdV - 300
+# full (6)
+# Sigma8 - 66
+# Lambda - 164, 238 (choosing to keep in 161)
+# S/V - 387 (choosing to keep in 282, 299, 301, 443)
+# C/V - 389
+# PVS - (choosing to keep in 21, 23)
+# BdV - 300
 
-  # marine (1)
-  # Sigma8 - 56, 172 (238), (choosing to keep in 301 (367))
-  # Lambda - 172 (238) (choosing to keep in 374 (454))
+# marine (1)
+# Sigma8 - 56, 172 (238), (choosing to keep in 301 (367))
+# Lambda - 172 (238) (choosing to keep in 374 (454))
 
-  # stream (0)
-  # Sigma8 - 2 (66)
+# stream (0)
+# Sigma8 - 2 (66)
 
-  # estuary (0)
-  # CV - 47 (389)
+# estuary (0)
+# CV - 47 (389)
 
 # Alright, so the seven outliers I'm removing will be 56, 66, 164, 238, 300, 387, and 389 from the original dataset. I'll work backwards to preserve line numbers.
 
@@ -745,7 +745,7 @@ anova(e6full, e6sub1) # So removing both fixed variables, e6sub1, is preferred w
 # STEP 9: Refit with REML
 
 efinal <- lme(logPVS ~ Environment, 
-          random = ~1 | Group, method = "REML", data = pvs)
+              random = ~1 | Group, method = "REML", data = pvs)
 
 # Output of the model.
 summary(efinal)
@@ -949,19 +949,19 @@ g1 <- lm(Sigma8 ~ Group + Land_Cover + Area, data = sigstream) # Creates the ini
 rg1 <- rstandard(g1) # Assigns standardized residuals to rg1.
 
 plot(rg1 ~ sigstream$LTER_Site, xlab = "Site",
-       ylab = "Standardised residuals") # Plots said residuals.
+     ylab = "Standardised residuals") # Plots said residuals.
 abline(0,0) # Site WILL be used as a random effect.
 
 plot(rg1 ~ sigstream$Group, xlab = "Date",
-       ylab = "Standardised residuals") 
+     ylab = "Standardised residuals") 
 abline(0,0) # Group looks all about zero, so removing as a random effect.
 
 plot(rg1 ~ sigstream$Area, xlab = "Watershed Size",
-       ylab = "Standardised residuals") 
+     ylab = "Standardised residuals") 
 abline(0,0) # Watershed size looks all about zero.
 
 plot(rg1 ~ sigstream$Land_Cover, xlab = "Land Use",
-       ylab = "Standardised residuals") 
+     ylab = "Standardised residuals") 
 abline(0,0) # Same here.
 
 #### STEP 2: Fit the lm() with GLS and compare to lme().
@@ -995,8 +995,8 @@ qqnorm(g3) # This is ok...
 # STEP 7/8: Step-wise Optimal Fixed Structure
 
 g3_ml <- lme(Sigma8 ~ Group + Land_Cover + Area, 
-          random =~1 | LTER_Site, method = "ML", data = sigstream)
- # Need to switch over to ML for the fixed component editing portion.
+             random =~1 | LTER_Site, method = "ML", data = sigstream)
+# Need to switch over to ML for the fixed component editing portion.
 
 g3sub1 <- update(g3_ml, .~. -Group) # Removes Group.
 g3sub2 <- update(g3_ml, .~. -Land_Cover) # Removes Land_Cover.
@@ -1013,12 +1013,12 @@ g4sub2 <- update(g4, .~. -Land_Cover) # Removes Land_Cover.
 anova(g4, g4sub1, g4sub2) # Compares the models. g4 preferred with an AIC value of 130.9081, so keep them both in.
 
 g4full <- lme(Sigma8 ~ Group + Land_Cover, 
-          random =~1 | LTER_Site, method = "ML", data = sigstream) # the final full model!!!
+              random =~1 | LTER_Site, method = "ML", data = sigstream) # the final full model!!!
 
 # STEP 9: Refit with REML
 
 gfinal <- lme(Sigma8 ~ Group + Land_Cover, 
-             random =~1 | LTER_Site, method = "REML", data = sigstream)
+              random =~1 | LTER_Site, method = "REML", data = sigstream)
 
 # Output of the model.
 summary(gfinal)
@@ -1074,7 +1074,7 @@ h1 <- lm(Lambda ~ Group + Land_Cover + Area, data = lamstream) # Initial linear 
 rh1 <- rstandard(h1) # Assigns standardized residuals to rh1.
 
 plot(rh1 ~ lamstream$LTER_Site, xlab = "Site",
-       ylab = "Standardised residuals") # Plots said residuals.
+     ylab = "Standardised residuals") # Plots said residuals.
 abline(0,0) # Site WILL be used as a random effect.
 
 #### STEP 2: Fit the lm() with GLS and compare to lme().
@@ -1109,7 +1109,7 @@ qqnorm(h3) # This actually looks ok...
 # STEP 7/8: Step-wise Optimal Fixed Structure
 
 h3_ml <- lme(Lambda ~ Group + Land_Cover + Area, 
-          random =~1 | LTER_Site, method = "ML", data = lamstream) # Need to switch over to ML for the fixed component editing portion.
+             random =~1 | LTER_Site, method = "ML", data = lamstream) # Need to switch over to ML for the fixed component editing portion.
 h3sub1 <- update(h3_ml, .~. -Group) # Removes Group.
 h3sub2 <- update(h3_ml, .~. -Land_Cover) # Removes Land_Cover.
 h3sub3 <- update(h3_ml, .~. -Area) # Removes Area.
@@ -1124,12 +1124,12 @@ h4sub2 <- update(h4, .~. -Area) # Removes Area.
 anova(h4, h4sub1, h4sub2) # Compares the models. h4 preferred with an AIC value of 49.25669, so keep both terms in.
 
 h4full <- lme(Lambda ~ Group + Area, 
-          random =~1 | LTER_Site, method = "ML", data = lamstream)
+              random =~1 | LTER_Site, method = "ML", data = lamstream)
 
 # STEP 9: Refit with REML
 
 hfinal <- lme(Lambda ~ Group + Area, 
-             random =~1 | LTER_Site, method = "REML", data = lamstream)
+              random =~1 | LTER_Site, method = "REML", data = lamstream)
 
 # Output of the model.
 summary(hfinal)
@@ -1246,8 +1246,8 @@ i4sub3 <- update(i4_ml, .~. -Land_Cover) # Removes land use type.
 anova(i4_ml, i4sub1, i4sub2, i4sub3) # Compares all models. i4sub3 preferred with an AIC value of 29.90527, so remove land cover.
 
 i5 <- lme(S.V ~ Group + Area, 
-             random =~1 | LTER_Site, method = "ML", data = svstream, 
-             weights = varIdent(form =~1 | Group))
+          random =~1 | LTER_Site, method = "ML", data = svstream, 
+          weights = varIdent(form =~1 | Group))
 
 i5sub1 <- update(i5, .~. -Group) # Removes date sampled.
 i5sub2 <- update(i5, .~. -Area) # Removes watershed area.
@@ -1507,7 +1507,7 @@ anova(k5, k5sub1) # k5 preferred with an AIC value of -69.13217, so keep Group i
 # STEP 9: Refit with REML
 
 kfinal <- lme(P..V.S. ~ Group, 
-          random =~1 | LTER_Site, method = "REML", data = pvsstream)
+              random =~1 | LTER_Site, method = "REML", data = pvsstream)
 
 # Output of the model.
 summary(kfinal)
@@ -1642,7 +1642,7 @@ anova(l6, l6sub1) # l6 preferred with AIC value of -61.01911. Keep it in.
 
 lfinal <- lme(Bd.V ~ Land_Cover, 
               random =~1 | LTER_Site, method = "REML", data = bdvstream,
-          weights = varIdent(form =~1 | Group))
+              weights = varIdent(form =~1 | Group))
 
 # Output of the model.
 summary(lfinal)
@@ -1665,6 +1665,257 @@ anova(lfinal) # Output for the paper.
 The final model took the form : Bd.V ~ Land_Cover + 1|LTER_Site + varIdent(Group)
 
 This translated to a formula of 3,5Bd/V = 0.23 - 0.05[AGR] - 0.07[URB] + random + variance.
+
+Post hoc results: NA.
+
+# Estuarine data
+
+```{r estuarine data, include=FALSE}
+
+# For the following code chunks, I'll use this same dataset since I've not added in any additional info like I did with the stream data.
+
+estuary <- mastered %>%
+  filter(mastered$Environment=="Estuary")
+
+# Ok, but in the following code, unless I create a separate dataset, all of the stream/marine site levels, for example, will still be in there, which I don't want for modeling purposes. So I'm going to do the following:
+
+#write.csv(estuary,"estuary.csv") # Export the data.
+estuarine <- read.csv("estuary.csv") # Load the data back in.
+#str(estuarine) # Check to make sure its in the format I want. Perfect!
+
+```
+
+## Sigma 8 (estuarine)
+
+```{r Sigma estuary, echo=FALSE}
+
+### Data Exploration
+# Not testing region since I've decided it's arbitrary.
+boxplot(Sigma8 ~ LTER_Site, data = estuarine) # Site boxplot. Fixed effect.
+boxplot(Sigma8 ~ Group, data = estuarine) # Date boxplot. Fixed effect.
+boxplot(Sigma8 ~ Core, data = estuarine) # Core section boxplot. Fixed effect?
+
+# So, based on boxplots, I move forward with Site, Group (date sampled), and Core as fixed variables and Group and Site as random NESTED variables.
+
+sigest <- estuarine %>%
+  dplyr::select(LTER_Site, Group, Core, Sigma8) %>%
+  na.omit# Create new dataset.
+
+pairs(sigest) # Pairs plot. I'm going to investigate all three as fixed effects.
+
+#### STEP 1: Create a linear regression and check residuals.
+
+# Response variables - Sigma8
+# Explanatory variables - Site, Group, Core
+
+m1 <- lm(Sigma8 ~ LTER_Site + Group + Core, data = sigest) # Initial linear model.
+rm1 <- rstandard(m1) # Assigns standardized residuals to rm1.
+
+plot(rm1 ~ sigest$LTER_Site, xlab = "Site",
+       ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # This appears as if it may not be needed as a random effect. But I am still going to use it for replicate sampling's sake.
+
+plot(rm1 ~ sigest$Group, xlab = "Date",
+       ylab = "Standardised residuals") 
+abline(0,0) # Group looks all about zero so removing from random term.
+
+plot(rm1 ~ sigest$Core, xlab = "Core Section",
+       ylab = "Standardised residuals") 
+abline(0,0) # Section looks all about zero too. Yes, also taking it out.
+
+#### STEP 2: Fit the lm() with GLS and compare to lme().
+
+m2 <- gls(Sigma8 ~ LTER_Site + Group + Core, data = sigest)
+
+m3 <- lme(Sigma8 ~ LTER_Site + Group + Core, 
+          random =~1 | LTER_Site, data = sigest) # First LMEM.
+
+anova(m2, m3) # Compares the two models. m2 is preferred with an AIC value of 246.2134, but I want to keep the random term in.
+
+#### STEP 3: Decide on a variance structure (aka random terms).
+# I'm deciding to keep a random term in to acknowledge the repeated measurement structure of the project design.
+
+plot(m3, col=1) # Check the residuals.
+qqnorm(m3) # Ok...skipping a variance term.
+
+# STEP 4: Fit the lme().
+
+# m3 <- lme(Sigma8 ~ LTER_Site + Group + Core, random =~1 | LTER_Site, data = sigest)
+
+# STEP 5: Compare the lm() and lme().
+
+# See Step 2.
+
+# STEP 6: Everything ok? Check residuals.
+
+# See Step 3.
+
+# STEP 7/8: Step-wise Optimal Fixed Structure
+
+m3_ml <- lme(Sigma8 ~ LTER_Site + Group + Core, 
+          random =~1 | LTER_Site, method = "ML", data = sigest) # ML model.
+
+m3sub1 <- update(m3_ml, .~. -LTER_Site) # Removes LTER_Site.
+m3sub2 <- update(m3_ml, .~. -Group) # Removes Group.
+m3sub3 <- update(m3_ml, .~. -Core) # Removes Core Section.
+
+anova(m3_ml, m3sub1, m3sub2, m3sub3) # Compare the models. m3sub2 preferred with an AIC value of 252.3266, so remove Group.
+
+m4 <- lme(Sigma8 ~ LTER_Site + Core, 
+          random =~1 | LTER_Site, method = "ML", data = sigest)
+
+m4sub1 <- update(m4, .~. -LTER_Site) # Removes Site.
+m4sub2 <- update(m4, .~. -Core) # Removes Core Section.
+
+anova(m4, m4sub1, m4sub2) # Compares the models. m4sub1 preferred with an AIC value of 250.3485, so take out Site.
+
+m5 <- lme(Sigma8 ~ Core, 
+          random =~1 | LTER_Site, method = "ML", data = sigest)
+
+m5sub1 <- update(m5, .~. -Core) # Removes Core Section.
+
+anova(m5, m5sub1) # Compares the models. m5sub1 preferred, so take out Core Section.
+
+# no final full model!!!
+
+# STOPPING HERE SINCE NOTHING IS SIGNIFICANT.
+
+# STEP 10: What does this mean in WORDS?
+
+# My model suggests there is NO significant effect of sampling date, section of core, or sampling site on Sigma 8 concentrations of a given estuarine sediment sample.
+
+# Equation: NA
+
+# BONUS POST HOC:
+
+# NOT NECESSARY
+
+```
+
+The final model took the form : Sigma8 ~ NA
+
+This translated to a formula of Sigma 8 = NA.
+
+Post hoc results: NA.
+
+##Lambda (estuarine)
+
+```{r Lambda estuary, echo=FALSE}
+
+### Data Exploration
+
+boxplot(Lambda ~ LTER_Site, data = estuarine) # Site boxplot. Fixed effect?
+boxplot(Lambda ~ Group, data = estuarine) # Date boxplot. Fixed effect.
+boxplot(Lambda ~ Core, data = estuarine) # Core section boxplot. Fixed effect.
+
+lamest <- estuarine %>%
+  dplyr::select(LTER_Site, Core, Group, Lambda) %>%
+  na.omit # Creates new dataset.
+
+pairs(lamest) # Pairs plot. Doesn't look like any of these will be significant...
+
+#### STEP 1: Create a linear regression and check residuals.
+
+# Response variables - Lambda
+# Explanatory variables - Group, Site, Core
+
+n1 <- lm(Lambda ~ Group + LTER_Site + Core, data = lamest) # Initial linear model.
+rn1 <- rstandard(n1) # Assigns standardized residuals to rn1.
+plot(rn1 ~ lamest$LTER_Site, xlab = "Site",
+       ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # It doesn't appear to need to be a random effect, but I am going to use it for replicate sampling's sake.
+
+plot(rn1 ~ lamest$Group, xlab = "Date",
+       ylab = "Standardised residuals") 
+abline(0,0) # Group looks all about zero. Not including in random effect term.
+
+plot(rn1 ~ lamest$Core, xlab = "Core Section",
+       ylab = "Standardised residuals") 
+abline(0,0) # Section looks all about zero too so removing from random effect.
+
+#### STEP 2: Fit the lm() with GLS and compare to lme().
+
+n2 <- gls(Lambda ~ Group + LTER_Site + Core, data = lamest)
+n3 <- lme(Lambda ~ Group + LTER_Site + Core, 
+          random =~1 | LTER_Site, data = lamest) # First LMEM with a random term.
+
+anova(n2, n3) # Compares the two models. n2 is preferred with an AIC value of 178.7976, but I want to keep the random term in.
+
+#### STEP 3: Decide on a variance structure (aka random terms).
+
+plot(n3, col=1) # Check the residuals. AWESOME.
+qqnorm(n3) # Pretty good. Going to skip the variance term.
+
+# STEP 4: Fit the lme().
+
+# Using n3 <- lme(Lambda ~ Group + LTER_Site + Core, random =~1 | LTER_Site, data = lamest)
+
+# STEP 5: Compare the lm() and lme().
+
+# See Step 2.
+
+# STEP 6: Everything ok? Check residuals.
+
+# See Step 3.
+
+# STEP 7/8: Step-wise Optimal Fixed Structure
+
+n3_ml <- lme(Lambda ~ Group + LTER_Site + Core, 
+          random =~1 | LTER_Site, method = "ML", data = lamest) # ML model format.
+
+n3sub1 <- update(n3_ml, .~. -Group) # Removes Group.
+n3sub2 <- update(n3_ml, .~. -LTER_Site) # Removes Site.
+n3sub3 <- update(n3_ml, .~. -Core) # Removes Core Section.
+
+anova(n3_ml, n3sub1, n3sub2, n3sub3) # Compare the models. n3sub1 preferred with an AIC value of 174.4099, so remove Group.
+
+n4 <- lme(Lambda ~ LTER_Site + Core, 
+          random =~1 | LTER_Site, method = "ML", data = lamest)
+
+n4sub1 <- update(n4, .~. -LTER_Site) # Removes Site.
+n4sub2 <- update(n4, .~. -Core) # Removes Core Section.
+
+anova(n4, n4sub1, n4sub2) # Compares the models. n4sub1 preferred with an AIC value of 172.4169, so take out Site.
+
+n5 <- lme(Lambda ~ Core, 
+          random =~1 | LTER_Site, method = "ML", data = lamest)
+
+n5sub1 <- update(n5, .~. -Core) # Removes Core Section.
+
+anova(n5, n5sub1) # Compares the models. n5 preferred with an AIC value of 172.4169, so leave in Core Section.
+
+# n5 is the final full model!
+
+# STEP 9: Refit with REML
+
+nfinal <- lme(Lambda ~ Core, 
+              random =~1 | LTER_Site, method = "REML", data = lamest)
+
+# Output of the model.
+summary(nfinal)
+plot(nfinal, col=1) # Checking residuals.They're fine.
+qqnorm(nfinal) # A little curvy but otherwise ok.
+qqnorm(nfinal, ~ranef (.), col = 1) # Hah, two points.
+#intervals(nfinal) # Show intervals.
+
+# Final results.
+anova(nfinal) # Output for the paper.
+
+# STEP 10: What does this mean in WORDS?
+
+# I applied a linear mixed effect modelling approach because the data are nested. My model suggests there is NO significant effect of sampling site, sampling date, or core section on Lambda signatures of a given sediment sample. A random intercept by sample site was also included.
+
+# Equation: Lambda = 1.93 - 0.51[Top] + random
+
+# BONUS : Tukey's HSD Post Hoc
+
+# NOT NECESSARY
+
+```
+
+The final model took the form : Lambda ~ Core + 1|LTER_Site
+
+This translated to a formula of Lambda = 1.93 - 0.51[Top] + random.
 
 Post hoc results: NA.
 
