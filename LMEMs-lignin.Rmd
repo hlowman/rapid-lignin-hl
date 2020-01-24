@@ -1412,4 +1412,260 @@ This translated to a formula of C/V = 0.12 - 0.10[GroupC] + 0.08[GroupI] + rando
 
 Post hoc results: Jan16 & Mar16, p = 0.9978 (NS) ; Jan16 & Jan17, p = 0.0003; Mar16 & Jan 17, p = 0.0002.
 
+## P/V+S (stream)
+
+```{r P/V+S stream, echo=FALSE}
+
+### Data Exploration.
+
+boxplot(P..V.S. ~ LTER_Site, data = streamed) # Site boxplot. Random effect.
+boxplot(P..V.S. ~ Group, data = streamed) # Date boxplot. Fixed effect.
+boxplot(P..V.S. ~ Area, data = streamed) # Area boxplot. Fixed effect?
+boxplot(P..V.S. ~ Land_Cover, data = streamed) # Land cover boxplot. Fixed effect?
+
+# So, based on boxplots, I move forward with Group (date sampled), Area and Land_Cover as fixed variables and Group and Site as random NESTED variables.
+
+pvsstream <- streamed %>%
+  dplyr::select(LTER_Site, Group, Area, Land_Cover, P..V.S.) %>%
+  na.omit# Create new dataset.
+
+pvsstream$Land_Cover <- factor(pvsstream$Land_Cover, levels = c("UND", "AGR", "URB")) # Relevels the land cover categories.
+
+op<- par(mfrow = c(1, 1), mar = c(3, 4, 1, 1))
+dotchart(pvsstream$P..V.S., groups = pvsstream$LTER_Site) # P/V+S versus Site.
+par(op) # Looking good.
+
+pairs(pvsstream) # Quick pairs plot to check correllated variables. Yep, variable choices still look good, and it looks like date is again going to drive the relationship here.
+
+#### STEP 1: Create a linear regression and check residuals.
+
+# Response variables - P/V+S
+# Explanatory variables - Group, Area, Land Cover
+
+k1 <- lm(P..V.S. ~ Group + Area + Land_Cover, data = pvsstream) # Linear model.
+rk1 <- rstandard(k1) # Assigns standardized residuals to rk1.
+
+plot(rk1 ~ pvsstream$LTER_Site, xlab = "Site",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # It will definitely be part of a random structure.
+
+plot(rk1 ~ pvsstream$Group, xlab = "Date Sampled",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Removing from random structure.
+
+#### STEP 2: Fit the lm() with GLS and compare to lme().
+
+k2 <- gls(P..V.S. ~ Group + Area + Land_Cover, data = pvsstream) # Linear regression.
+k3 <- lme(P..V.S. ~ Group + Area + Land_Cover, 
+          random =~1 | LTER_Site, data = pvsstream ) # First LMEM with random term.
+
+anova(k2, k3) # Compares the two models. k2 preferred with an AIC value of -25.61488, but I'm keeping the random term in for repeated measures sake.
+
+# STEP 3: Decide on a variance structure (aka random terms and correlation structure if any).
+
+plot(k3, col=1) # Plots residuals before immediately applying variance transformation. I don't think we need an additional variance structure.
+
+# STEP 4: Fit the lme().
+
+# k3 <- lme(P..V.S. ~ Group + Area + Land_Cover, random =~1 | LTER_Site, data = pvsstream)
+
+# STEP 5: Compare the lm() and lme().
+
+# See Step 2.
+
+# STEP 6: Everything ok? Check residuals.
+
+plot(k3, col=1) # Residuals look really quite good.
+qqnorm(k3) # Looks fine.
+
+# STEP 7/8: Step-wise Optimal Fixed Structure
+
+k3_ml <- lme(P..V.S. ~ Group + Area + Land_Cover, 
+             random =~1 | LTER_Site, method = "ML", data = pvsstream) # ML model structure.
+
+k3sub1 <- update(k3_ml, .~. -Group) # Removes date.
+k3sub2 <- update(k3_ml, .~. -Area) # Removes watershed area.
+k3sub3 <- update(k3_ml, .~. -Land_Cover) # Removes land use.
+
+anova(k3_ml, k3sub1, k3sub2, k3sub3) # Compares all models. k3sub2 is preferred with an AIC value of -68.42672. So, remove area.
+
+k4 <- lme(P..V.S. ~ Group + Land_Cover, 
+          random =~1 | LTER_Site, method = "ML", data = pvsstream)
+
+k4sub1 <- update(k4, .~. -Group) # Removes date.
+k4sub2 <- update(k4, .~. -Land_Cover) # Removes land use.
+
+anova(k4, k4sub1, k4sub2) # k4sub2 preferred with AIC value of -69.13217; remove land use.
+
+k5 <- lme(P..V.S. ~ Group, 
+          random =~1 | LTER_Site, method = "ML", data = pvsstream)
+
+k5sub1 <- update(k5, .~. -Group) # Just checking...
+
+anova(k5, k5sub1) # k5 preferred with an AIC value of -69.13217, so keep Group in.
+
+# STEP 9: Refit with REML
+
+kfinal <- lme(P..V.S. ~ Group, 
+          random =~1 | LTER_Site, method = "REML", data = pvsstream)
+
+# Output of the model.
+summary(kfinal)
+plot(kfinal, col=1) # Checking residuals.They're fine.
+qqnorm(kfinal) # Look pretty good considering low # of samples.
+qqnorm(kfinal, ~ranef (.), col = 1) # Plot of random effect residuals, looks good.
+intervals(kfinal) # Show intervals.
+
+# Final results.
+anova(kfinal) # Output for the paper.
+
+# STEP 10: What does this mean in WORDS?
+
+# I applied a linear mixed effect modelling approach because the data are nested. My model suggests there is NO significant effect of region, watershed area, or land use on P/V+S signatures of a given sediment sample, but DATE has a significant effect. Random intercept by sample site was also included.
+
+# Equation: P/V+S = 0.30 - 0.08[C] - 0.22[I] + random
+
+# BONUS : Tukey's HSD Post Hoc
+kHSD <- glht(kfinal, linfct=mcp(Group="Tukey"))
+summary(kHSD) # All significantly different.
+
+```
+
+The final model took the form : P..V.S. ~ Group + 1|LTER_Site
+
+This translated to a formula of P/V+S = 0.30 - 0.08[C] - 0.22[I] + random.
+
+Post hoc results: Jan16 (B) & Mar16 (C), p = 0.0004 ; Jan16 (B) & Jan17 (I), p < 0.0001; Mar16 (C) & Jan 17 (I), p < 0.0001.
+
+# 3,5Bd/V (stream)
+
+```{r 35Bd/V stream, echo=FALSE}
+
+### Data Exploration 
+
+boxplot(Bd.V ~ LTER_Site, data = streamed) # Site boxplot. Random effect.
+boxplot(Bd.V ~ Group, data = streamed) # Date boxplot. Fixed effect.
+boxplot(Bd.V ~ Area, data = streamed) # Watershed area. Fixed effect? These really look random, but I'm choosing to keep them in for reasoning purposes - it doesn't really make sense for them to be part of the random effect structure AND it was found to be significant in Lambda stream values so...
+boxplot(Bd.V ~ Land_Cover, data = streamed) # Land cover boxplot. Fixed effect.
+
+# So, based on boxplots, I move forward with Group (date sampled), Area and Land_Cover as fixed variables and Group and Site as random NESTED variables.
+
+bdvstream <- streamed %>%
+  dplyr::select(LTER_Site, Group, Area, Land_Cover, Bd.V) %>%
+  na.omit# Create new dataset.
+
+bdvstream$Land_Cover <- factor(bdvstream$Land_Cover, levels = c("UND", "AGR", "URB")) # Relevels the land cover categories.
+
+op<- par(mfrow = c(1, 1), mar = c(3, 4, 1, 1))
+dotchart(bdvstream$Bd.V, groups = bdvstream$LTER_Site) # P/V+S versus Site.
+par(op) # Looking ok. There's definitely an outlier, but I'm not taking any more out.
+
+pairs(bdvstream) # Pairs plot. Variable choices look good, and land cover may play a role!
+
+#### STEP 1: Create a linear regression and check residuals.
+
+# Response variables - 3,5-Bd/V
+# Explanatory variables - Group, Area, Land Cover
+
+l1 <- lm(Bd.V ~ Group + Area + Land_Cover, data = bdvstream) # Initial linear model.
+rl1 <- rstandard(l1) # Assigns standardized residuals to rl1.
+
+plot(rl1 ~ bdvstream$LTER_Site, xlab = "Site",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Within site correlation, so it will definitely be part of a random structure.
+
+plot(rl1 ~ bdvstream$Group, xlab = "Date Sampled",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Taking it out of my random structure.
+
+#### STEP 2: Fit the lm() with GLS and compare to lme().
+
+l2 <- gls(Bd.V ~ Group + Area + Land_Cover, data = bdvstream) # Linear regression.
+l3 <- lme(Bd.V ~ Group + Area + Land_Cover, 
+          random =~1 | LTER_Site / Group, data = bdvstream ) # First LMEM with random term.
+
+anova(l2, l3) # Compares the two models. l2 preferred with an AIC value of -18.67473, but I'm keeping the random term in for repeated measures sake.
+
+# STEP 3: Decide on a variance structure (aka random terms and correlation structure if any).
+
+plot(l3, col=1) # Plots residuals before immediately applying variance transformation. We definitely need a transformation, so I'll make it by date.
+
+l4 <- lme(Bd.V ~ Group + Area + Land_Cover, 
+          random =~1 | LTER_Site, data = bdvstream,
+          weights = varIdent(form =~1 | Group))
+
+anova(l3, l4) # Compares models. l4 is best with an AIC value of -15.35811.
+
+# STEP 4: Fit the lme().
+
+# Using l4 <- lme(Bd.V ~ Group + Area + Land_Cover, random =~1 | LTER_Site, data = bdvstream, weights = varIdent(form =~1 | Group))
+
+# STEP 5: Compare the lm() and lme().
+
+anova(l2,l4) # l2 still preferred, but I'm keeping the random term in.
+
+# STEP 6: Everything ok? Check residuals.
+
+plot(l4, col=1) # Residuals look pretty good.
+qqnorm(l4) # Looks GOOD.
+
+# STEP 7/8: Step-wise Optimal Fixed Structure
+
+l4_ml <- lme(Bd.V ~ Group + Area + Land_Cover, 
+             random =~1 | LTER_Site, method = "ML", data = bdvstream,
+             weights = varIdent(form =~1 | Group))  # ML model structure.
+
+l4sub1 <- update(l4_ml, .~. -Group) # Removes date.
+l4sub2 <- update(l4_ml, .~. -Area) # Removes watershed area.
+l4sub3 <- update(l4_ml, .~. -Land_Cover) # Removes land use.
+
+anova(l4_ml, l4sub1, l4sub2, l4sub3) # Compares all models. l4sub1 is preferred with an AIC value of -59.31871. So, remove sampling date.
+
+l5 <- lme(Bd.V ~ Area + Land_Cover, 
+          random =~1 | LTER_Site, method = "ML", data = bdvstream,
+          weights = varIdent(form =~1 | Group))
+
+l5sub1 <- update(l5, .~. -Area) # Removes watershed area.
+l5sub2 <- update(l5, .~. -Land_Cover) # Removes land cover.
+
+anova(l5, l5sub1, l5sub2) # l5sub1 preferred with an AIC value of -61.01911 - remove area.
+
+l6 <- lme(Bd.V ~ Land_Cover, 
+          random =~1 | LTER_Site, method = "ML", data = bdvstream,
+          weights = varIdent(form =~1 | Group))
+
+l6sub1 <- update(l6, .~. -Land_Cover) # Removes land cover.
+
+anova(l6, l6sub1) # l6 preferred with AIC value of -61.01911. Keep it in.
+
+# STEP 9: Refit with REML
+
+lfinal <- lme(Bd.V ~ Land_Cover, 
+              random =~1 | LTER_Site, method = "REML", data = bdvstream,
+          weights = varIdent(form =~1 | Group))
+
+# Output of the model.
+summary(lfinal)
+plot(lfinal, col=1) # Checking residuals.
+qqnorm(lfinal) # Looks better than before.
+qqnorm(lfinal, ~ranef (.), col = 1) # Plot of random effect residuals, looks ok.
+#intervals(lfinal) # Show intervals.
+
+# Final results.
+anova(lfinal) # Output for the paper.
+
+# STEP 10: What does this mean in WORDS?
+
+# I applied a linear mixed effect modelling approach because the data are nested. My model suggests there is NO significant effect of date sampled, watershed area, or land use on 3,5Bd/V signatures of a given sediment sample. A random intercept term by sample site and a variance term by sampling date were also included.
+
+# Equation: 3,5Bd/V = 0.23 - 0.05[AGR] - 0.07[URB] + random + variance
+
+```
+
+The final model took the form : Bd.V ~ Land_Cover + 1|LTER_Site + varIdent(Group)
+
+This translated to a formula of 3,5Bd/V = 0.23 - 0.05[AGR] - 0.07[URB] + random + variance.
+
+Post hoc results: NA.
+
 This is the end of the RMarkdown document.
