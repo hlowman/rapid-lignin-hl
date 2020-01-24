@@ -913,4 +913,248 @@ This translated to a formula of log(P/V+S) = -0.77 + 0.009[Estuary] + 0.40[Reef]
 
 Post hoc results: Stream - Estuary, p = 0.996 (NS); Stream - Reef, p < 0.0001; Estuary - Reef, p < 0.0001.
 
+#Stream Data
+
+```{r stream data, include=FALSE}
+
+stream <- read.csv("stream_only_ed.csv") # This imports a stream-data only dataset with watershed characteristics added in (watershed area, land cover, etc.)
+
+streamed <- stream[ -2, ]# Removes the necessary outliers.
+
+```
+
+##Sigma 8 (stream)
+
+```{r Sigma stream, echo=FALSE}
+
+### Data Exploration
+
+sigstream <- streamed %>%
+  dplyr::select(LTER_Site, Area, Land_Cover, Group, Sigma8) %>%
+  na.omit # Create new dataset. Not testing region any longer since I've decided it's arbitrary.
+
+boxplot(Sigma8 ~ LTER_Site, data = sigstream) # Site boxplot. Random effect.
+boxplot(Sigma8 ~ Group, data = sigstream) # Date boxplot. Fixed effect.
+boxplot(Sigma8 ~ Area, data = sigstream) # Watershed area boxplot. Fixed effect?
+boxplot(Sigma8 ~ Land_Cover, data = sigstream) # Land cover boxplot. Fixed effect.
+
+pairs(sigstream) # Pairs plot. So, I'm going to investigate all three as fixed effects at first, but Site should go in as a random effect too.
+
+#### STEP 1: Create a linear regression and check residuals.
+
+# Response variables - Sigma8
+# Explanatory variables - Group, Land_Cover, Watershed Area
+
+g1 <- lm(Sigma8 ~ Group + Land_Cover + Area, data = sigstream) # Creates the initial linear model with all fixed variables.
+rg1 <- rstandard(g1) # Assigns standardized residuals to rg1.
+
+plot(rg1 ~ sigstream$LTER_Site, xlab = "Site",
+       ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Site WILL be used as a random effect.
+
+plot(rg1 ~ sigstream$Group, xlab = "Date",
+       ylab = "Standardised residuals") 
+abline(0,0) # Group looks all about zero, so removing as a random effect.
+
+plot(rg1 ~ sigstream$Area, xlab = "Watershed Size",
+       ylab = "Standardised residuals") 
+abline(0,0) # Watershed size looks all about zero.
+
+plot(rg1 ~ sigstream$Land_Cover, xlab = "Land Use",
+       ylab = "Standardised residuals") 
+abline(0,0) # Same here.
+
+#### STEP 2: Fit the lm() with GLS and compare to lme().
+
+g2 <- gls(Sigma8 ~ Group + Land_Cover + Area, data = sigstream)
+
+g3 <- lme(Sigma8 ~ Group + Land_Cover + Area, 
+          random =~1 | LTER_Site, data = sigstream) # Creates the first LMEM.
+
+anova(g2, g3) # Compares the two models. g3 preferred with AIC of 122.1638.
+
+#### STEP 3: Decide on a variance structure (aka random terms).
+
+plot(g3, col=1) # Check the residuals.
+qqnorm(g3) # This is ok...
+
+# No additional variance structure necessary.
+
+# STEP 4: Fit the lme().
+
+# Using g3 <- lme(Sigma8 ~ Group + Land_Cover + Area, random =~1 | LTER_Site, data = sigstream)
+
+# STEP 5: Compare the lm() and lme().
+
+# See Step 2.
+
+# STEP 6: Everything ok? Check residuals.
+
+# See Step 3.
+
+# STEP 7/8: Step-wise Optimal Fixed Structure
+
+g3_ml <- lme(Sigma8 ~ Group + Land_Cover + Area, 
+          random =~1 | LTER_Site, method = "ML", data = sigstream)
+ # Need to switch over to ML for the fixed component editing portion.
+
+g3sub1 <- update(g3_ml, .~. -Group) # Removes Group.
+g3sub2 <- update(g3_ml, .~. -Land_Cover) # Removes Land_Cover.
+g3sub3 <- update(g3_ml, .~. -Area) # Removes Area.
+
+anova(g3_ml, g3sub1, g3sub2, g3sub3) # Compare the models. sub3 preferred with and AIC value of 130.9081, so remove Area.
+
+g4 <- lme(Sigma8 ~ Group + Land_Cover, 
+          random =~1 | LTER_Site, method = "ML", data = sigstream)
+
+g4sub1 <- update(g4, .~. -Group) # Removes Group.
+g4sub2 <- update(g4, .~. -Land_Cover) # Removes Land_Cover.
+
+anova(g4, g4sub1, g4sub2) # Compares the models. g4 preferred with an AIC value of 130.9081, so keep them both in.
+
+g4full <- lme(Sigma8 ~ Group + Land_Cover, 
+          random =~1 | LTER_Site, method = "ML", data = sigstream) # the final full model!!!
+
+# STEP 9: Refit with REML
+
+gfinal <- lme(Sigma8 ~ Group + Land_Cover, 
+             random =~1 | LTER_Site, method = "REML", data = sigstream)
+
+# Output of the model.
+summary(gfinal)
+
+# Checking residuals.
+plot(gfinal, col=1) # No pattern.
+qqnorm(gfinal) # This makes me feel pretty good.
+intervals(gfinal) # Show intervals.
+
+# Final results.
+anova(gfinal)
+
+# STEP 10: What does this mean in WORDS?
+
+# My model suggests there is NO significant effect of sampling date OR land use/cover on Sigma 8 concentrations of a given stream sediment sample.
+
+# Equation: Sigma 8 = 2.59 + 1.91[GroupC] + 3.39[GroupI] - 1.12[Undeveloped] + 3.09[Urban] + random
+
+# POST HOC: NA
+
+
+```
+
+The final model took the form : Sigma ~ Group + Land_Cover + 1|LTER_Site
+
+This translated to a formula of Sigma 8 = 2.59 + 1.91[GroupC] + 3.39[GroupI] - 1.12[Undeveloped] + 3.09[Urban] + random
+
+Post hoc results: NA.
+
+## Lambda (stream)
+
+```{r Lambda stream, echo=FALSE}
+
+### Data Exploration
+
+lamstream <- streamed %>%
+  dplyr::select(LTER_Site, Area, Land_Cover, Group, Lambda) %>%
+  na.omit # Create new dataset.
+
+boxplot(Lambda ~ LTER_Site, data = lamstream) # Site boxplot. Random effect.
+boxplot(Lambda ~ Group, data = lamstream) # Date boxplot. Fixed effect.
+boxplot(Lambda ~ Area, data = lamstream) # Watershed area boxplot. Fixed effect?
+boxplot(Lambda ~ Land_Cover, data = lamstream) # Land cover boxplot. Fixed effect?
+
+pairs(lamstream) # Pairs plot. So, I'm going to investigate all three as fixed effects at first, but Site should go in as a random effect too.
+
+#### STEP 1: Create a linear regression and check residuals.
+
+# Response variables - Lambda
+# Explanatory variables - Group, Land_Cover, Watershed Area
+
+h1 <- lm(Lambda ~ Group + Land_Cover + Area, data = lamstream) # Initial linear model.
+rh1 <- rstandard(h1) # Assigns standardized residuals to rh1.
+
+plot(rh1 ~ lamstream$LTER_Site, xlab = "Site",
+       ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Site WILL be used as a random effect.
+
+#### STEP 2: Fit the lm() with GLS and compare to lme().
+
+h2 <- gls(Lambda ~ Group + Land_Cover + Area, data = lamstream)
+
+h3 <- lme(Lambda ~ Group + Land_Cover + Area, 
+          random =~1 | LTER_Site, data = lamstream) # Creates the first LMEM.
+
+anova(h2, h3) # Compares the two models. h2 preferred with an AIC value of 60.67366.
+
+#### STEP 3: Decide on a variance structure (aka random terms).
+# I'm deciding to keep a random term in to acknowledge the repeated measurement structure of the project design.
+
+plot(h3, col=1) # Check the residuals.
+qqnorm(h3) # This actually looks ok...
+
+# Going to skip the extra variance structure.
+
+# STEP 4: Fit the lme().
+
+# Using h3 <- lme(Lambda ~ Group + Land_Cover + Area, random =~1 | LTER_Site, data = lamstream)
+
+# STEP 5: Compare the lm() and lme().
+
+# See Step 2.
+
+# STEP 6: Everything ok? Check residuals.
+
+# See Step 3. 
+
+# STEP 7/8: Step-wise Optimal Fixed Structure
+
+h3_ml <- lme(Lambda ~ Group + Land_Cover + Area, 
+          random =~1 | LTER_Site, method = "ML", data = lamstream) # Need to switch over to ML for the fixed component editing portion.
+h3sub1 <- update(h3_ml, .~. -Group) # Removes Group.
+h3sub2 <- update(h3_ml, .~. -Land_Cover) # Removes Land_Cover.
+h3sub3 <- update(h3_ml, .~. -Area) # Removes Area.
+
+anova(h3_ml, h3sub1, h3sub2, h3sub3) # Compare the models. sub2 preferred with an AIC value of 49.25669, so remove Land Cover.
+
+h4 <- lme(Lambda ~ Group + Area, 
+          random =~1 | LTER_Site, method = "ML", data = lamstream)
+h4sub1 <- update(h4, .~. -Group) # Removes Group.
+h4sub2 <- update(h4, .~. -Area) # Removes Area.
+
+anova(h4, h4sub1, h4sub2) # Compares the models. h4 preferred with an AIC value of 49.25669, so keep both terms in.
+
+h4full <- lme(Lambda ~ Group + Area, 
+          random =~1 | LTER_Site, method = "ML", data = lamstream)
+
+# STEP 9: Refit with REML
+
+hfinal <- lme(Lambda ~ Group + Area, 
+             random =~1 | LTER_Site, method = "REML", data = lamstream)
+
+# Output of the model.
+summary(hfinal)
+
+# Checking residuals.
+plot(hfinal, col=1) # No pattern.
+qqnorm(hfinal) # This looks good.
+
+# Show intervals.
+intervals(hfinal)
+anova(hfinal)
+
+# STEP 10: What does this mean in WORDS?
+
+# My model suggests there is a significant effect of sampling date but not watershed size on Lambda concentrations of a given stream sediment sample.
+
+# Equation: Lambda = 1.72 + 0.44[GroupC] + 1.87[GroupI] - 0.02[Area] + random
+
+# BONUS POST HOC:
+
+hHSD <- glht(hfinal, linfct=mcp(Group="Tukey"))
+
+summary(hHSD) # Significant different between Jan 2016 and Jan 2017 (p < 0.0001) as well as March 2016 and Jan 2017 (p < 0.0001).
+
+```
+
+
 This is the end of the RMarkdown document.
