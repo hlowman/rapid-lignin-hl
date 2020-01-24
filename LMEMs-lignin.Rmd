@@ -764,8 +764,8 @@ anova(efinal) # Output for the paper
 # Equation: log(P/V+S) = -0.76 - 0.15[Estuary] - 0.07[Reef] + random
 
 # BONUS : Tukey's HSD Post Hoc
-eHSD <- glht(efinal, linfct=mcp(Environment="Tukey"))
-summary(eHSD) #  No significant difference between Stream & Estuary, but significant between Stream & Reef (p<0.0001) and Estuary & Reef (p<0.0001).
+
+# NA.
 
 # Value calculations for manuscript:
 
@@ -1151,7 +1151,6 @@ anova(hfinal)
 # BONUS POST HOC:
 
 hHSD <- glht(hfinal, linfct=mcp(Group="Tukey"))
-
 summary(hHSD) # Significant different between Jan 2016 and Jan 2017 (p < 0.0001) as well as March 2016 and Jan 2017 (p < 0.0001).
 
 ```
@@ -1918,5 +1917,257 @@ The final model took the form : Lambda ~ Core + 1|LTER_Site
 This translated to a formula of Lambda = 1.93 - 0.51[Top] + random.
 
 Post hoc results: NA.
+
+## S/V (estuarine)
+
+```{r S/V estuary, echo=FALSE}
+### Data Exploration - boxplots and pairplots
+
+boxplot(S.V ~ LTER_Site, data = estuarine) # Site boxplot. Fixed effect.
+boxplot(S.V ~ Group, data = estuarine) # Date boxplot. Fixed effect?
+boxplot(S.V ~ Core, data = estuarine) # Core boxplot. Fixed effect?
+
+svest <- estuarine %>%
+  dplyr::select(LTER_Site, Group, Core, S.V) %>%
+  na.omit # Creates new dataset.
+
+# So, based on boxplots, I move forward with Site, Group, and Core as fixed effects and Site as a random variable.
+
+op<- par(mfrow = c(1, 1), mar = c(3, 4, 1, 1))
+dotchart(svest$S.V, groups = svest$LTER_Site) # S/V versus Site.
+par(op) # A few outliers, but not taking out any more data.
+
+pairs(svest) # Pairs plot. Hard to discern patterns here honestly.
+
+#### STEP 1: Create a linear regression and check residuals.
+
+# Response variables - S/V
+# Explanatory variables - Group, Site, Core
+
+o1 <- lm(S.V ~ Group + Core + LTER_Site, data = svest) # Initial linear model.
+ro1 <- rstandard(o1) # Assigns standardized residuals.
+plot(ro1 ~ svest$LTER_Site, xlab = "Site",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Doesn't look like site needs to be a random effect, but going to keep it in due to repeat sampling.
+
+plot(ro1 ~ svest$Group, xlab = "Date Sampled",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Removing from random structure.
+
+plot(ro1 ~ svest$Core, xlab = "Water Depth Sampled",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Do not include as part of random structure.
+
+#### STEP 2: Fit the lm() with GLS and compare to lme().
+
+o2 <- gls(S.V ~ Group + Core + LTER_Site, data = svest) # Linear regression.
+o3 <- lme(S.V ~ Group + Core + LTER_Site, 
+          random =~1 | LTER_Site, data = svest) # First LMEM with random term.
+
+anova(o2, o3) # Compares the two models. o2 preferred with AIC value of 170.6228, but keeping random term in.
+
+# STEP 3: Decide on a variance structure (aka random terms and correlation structure if any).
+
+plot(o3, col=1) # Plots residuals before immediately applying variance transformation.
+
+o4 <- lme(S.V ~ Group + Core + LTER_Site, 
+          random =~1 | LTER_Site, data = svest,
+          weights = varIdent(form =~1 | Group)) # Adding in a variance structure to allow for different variance by date - based on boxplots.
+
+anova(o3, o4) # Compares model with random effect and model with both random and variance effects. o4 preferred with an AIC value of 154.6728 so keep alternate variance structure in there.
+
+# STEP 4: Fit the lme().
+
+# Using o4 <- lme(S.V ~ Group + Core + LTER_Site, 
+#          random =~1 | LTER_Site, data = svest,
+#          weights = varIdent(form =~1 | Group))
+
+# STEP 5: Compare the lm() and lme().
+
+anova(o2, o4) # 4 definitely outperforms 2 with an AIC value of 154.6728.
+
+# STEP 6: Everything ok? Check residuals.
+
+plot(o4, col=1) # Residuals look better than they did.
+qqnorm(o4) # Looks a little weird...but not terrible.
+
+# STEP 7/8: Step-wise Optimal Fixed Structure
+
+o4_ml <- lme(S.V ~ Group + Core + LTER_Site,
+             random =~1 | LTER_Site, method = "ML", data = svest,
+             weights = varIdent(form =~1 | Group)) # Creates current model using ML structure.
+
+# Using the shorter syntax to save space.
+o4sub1 <- update(o4_ml, .~. -Group) # Removes date sampled.
+o4sub2 <- update(o4_ml, .~. -Core) # Removes core section.
+o4sub3 <- update(o4_ml, .~. -LTER_Site) # Removes sampling site.
+anova(o4_ml, o4sub1, o4sub2, o4sub3) # Compares all models. o4sub1 preferred with an AIC value of 146.7756. Remove Date sampled.
+
+o5 <- lme(S.V ~ Core + LTER_Site,
+             random =~1 | LTER_Site, method = "ML", data = svest,
+             weights = varIdent(form =~1 | Group))
+o5sub1 <- update(o5, .~. -Core) # Removes core section.
+o5sub2 <- update(o5, .~. -LTER_Site) # Removes site sampled.
+anova(o5, o5sub1, o5sub2) # Compares all models. o5sub1 preferred with an AIC value of 144.9788, so remove Core.
+
+o6 <- lme(S.V ~ LTER_Site, 
+          random =~1 | LTER_Site, method = "ML", data = svest,
+          weights = varIdent(form =~1 | Group))
+o6sub1 <- update(o6, .~. -LTER_Site) # Removes water depth.
+anova(o6, o6sub1) # Compares all models. o6sub1 preferred with an AIC value of 143.3728, so remove Site..
+
+# AND I'M DONE.
+
+# STEP 9: Refit with REML
+
+# NA
+
+# STEP 10: What does this mean in WORDS?
+
+# I applied a linear mixed effect modelling approach because the data are nested. My model suggests there is NO significant effect of date sampled, core section, or sampling site on estuarine S/V signatures. Random intercepts by site were included as well as a variance term for sampling date.
+
+# Equation: S/V = NA
+
+# BONUS : Tukey's HSD Post Hoc
+
+# NA
+
+```
+
+The final model took the form : S.V ~ NA
+
+This translated to a formula of S/V = NA
+
+Post hoc results: NA.
+
+##C/V (estuarine)
+
+```{r C/V estuary, echo=FALSE}
+### Data Exploration - boxplots and pairplots
+
+boxplot(C.V ~ LTER_Site, data = estuarine) # Site boxplot. Fixed effect.
+boxplot(C.V ~ Group, data = estuarine) # Date boxplot. Fixed effect.
+boxplot(C.V ~ Core, data = estuarine) # Core boxplot. Fixed effect.
+
+# So, based on boxplots, I move forward with Group (date sampled), Site, and Core (section) as fixed and Site as a random variable.
+
+cvest <- estuarine %>%
+  dplyr::select(LTER_Site, Group, Core, C.V) %>%
+  na.omit # Creates new dataset.
+
+op<- par(mfrow = c(1, 1), mar = c(3, 4, 1, 1))
+dotchart(cvest$C.V, groups = cvest$LTER_Site) # C/V versus Site.
+par(op) # Looking ok.
+
+pairs(cvest) # Pairs plot; yes, variable choices still look good.
+
+#### STEP 1: Create a linear regression and check residuals.
+
+# Response variables - C/V
+# Explanatory variables - Group, Site, Core
+
+p1 <- lm(C.V ~ Group + Core + LTER_Site, data = cvest) # Initial linear model.
+rp1 <- rstandard(p1) # Assigns standardized residuals.
+
+plot(rp1 ~ cvest$LTER_Site, xlab = "Site",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Doesn't look like site needs to be a random effect, but going to keep it in due to repeat sampling.
+# Checking other potential portions of the random effect as I've been doing above.
+plot(rp1 ~ cvest$Group, xlab = "Date Sampled",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Does not need to be in random structure.
+
+plot(rp1 ~ cvest$Core, xlab = "Water Depth Sampled",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Does not need to be in random structure either.
+
+#### STEP 2: Fit the lm() with GLS and compare to lme().
+
+p2 <- gls(C.V ~ Group + Core + LTER_Site, data = cvest) # Linear regression.
+p3 <- lme(C.V ~ Group + Core + LTER_Site, 
+          random =~1 | LTER_Site, data = cvest) # First LMEM with random term.
+anova(p2, p3) # Compares the two models. p2 preferred with an AIC value of -4.677118, but keeping random term in for replicate sampling sake.
+
+# STEP 3: Decide on a variance structure.
+
+plot(p3, col=1) # Plots residuals.
+
+p4 <- lme(C.V ~ Group + Core + LTER_Site, 
+          random =~1 | LTER_Site, data = cvest,
+          weights = varIdent(form =~1 | Group)) # Adding variance structure by date.
+
+anova(p3, p4) # Compares model with random effect and model with both random and variance effects. p4 preferred with an AIC value of -9.346233 so keep alternate variance structure in there.
+
+# STEP 4: Fit the lme().
+
+# Using p4 <- lme(C.V ~ Group + Core + LTER_Site, 
+#          random =~1 | LTER_Site, data = cvest,
+#          weights = varIdent(form =~1 | Group))
+
+# STEP 5: Compare the lm() and lme().
+
+anova(p2, p4) # 4 definitely outperforms 2 with an AIC value of -9.346233.
+
+# STEP 6: Everything ok? Check residuals.
+
+plot(p4, col=1) # Residuals look better than they did.
+qqnorm(p4) # Looks good.
+
+# STEP 7/8: Step-wise Optimal Fixed Structure
+
+p4_ml <- lme(C.V ~ Group + Core + LTER_Site,
+             random =~1 | LTER_Site, method = "ML", data = cvest,
+             weights = varIdent(form =~1 | Group)) # ML model structure.
+p4sub1 <- update(p4_ml, .~. -Group) # Removes date sampled.
+p4sub2 <- update(p4_ml, .~. -Core) # Removes core section.
+p4sub3 <- update(p4_ml, .~. -LTER_Site) # Removes sampling site.
+anova(p4_ml, p4sub1, p4sub2, p4sub3) # Compares all models. p4sub2 preferred with and AIC value of -38.75406. Remove Core.
+
+p5 <- lme(C.V ~ Group + LTER_Site,
+             random =~1 | LTER_Site, method = "ML", data = cvest,
+             weights = varIdent(form =~1 | Group))
+p5sub1 <- update(p5, .~. -LTER_Site) # Removes sampling site.
+p5sub2 <- update(p5, .~. -Group) # Removes date sampled.
+anova(p5, p5sub1, p5sub2) # Compares all models. p5sub1 preferred with an AIC value of -39.8869, so remove Site.
+
+p6 <- lme(C.V ~ Group, 
+          random =~1 | LTER_Site, method = "ML", data = cvest,
+          weights = varIdent(form =~1 | Group))
+p6sub1 <- update(p6, .~. -Group) # Removes date sampled.
+anova(p6, p6sub1) # Compares all models. p6 preferred with an AIC value of -39.8869, so keep Group in there.
+
+# p6 is the final full model!!!
+
+# STEP 9: Refit with REML
+
+pfinal <- lme(C.V ~ Group, 
+              random =~1 | LTER_Site, method = "REML", data = cvest, 
+              weights = varIdent(form =~1 | Group))
+
+# Output of the model.
+summary(pfinal)
+plot(pfinal, col=1) # Checking residuals. Looking good!
+qqnorm(pfinal) # Looks better than before - a little curvy, but OK I think.
+qqnorm(pfinal, ~ranef (.), col = 1) # Plot of random effect residuals.
+intervals(pfinal) # Show intervals.
+anova(pfinal) # Output for the paper
+
+# STEP 10: What does this mean in WORDS?
+
+# I applied a linear mixed effect modelling approach because the data are nested. My model suggests there is a significant effect of date sampled on estuarine C/V signatures. Random intercepts by site were included as well as a variance term for sampling date.
+
+# Equation: C/V = 0.19 + 0.11[GroupF] + 0.23[GroupH] + 0.27[GroupK] + random + variance
+
+# BONUS : Tukey's HSD Post Hoc
+pHSD <- glht(pfinal, linfct=mcp(Group="Tukey"))
+summary(pHSD) # Results of post hoc: F - D, p = 0.0295; H - D, p = 0.00127; K - D, p = 0.00845; H - F, K - F, and K - H were p > 0.05.
+
+```
+
+The final model took the form : C.V ~ Group + 1|LTER_Site + 1|Group(var)
+
+This translated to a formula of C/V = 0.19 + 0.11[GroupF] + 0.23[GroupH] + 0.27[GroupK] + random + variance.
+
+Post hoc results: April 2016 and July 2016, p = 0.0295; April 2016 and April 2017, p = 0.00127; April 2016 and June 2017, p = 0.00845.
 
 This is the end of the RMarkdown document.
