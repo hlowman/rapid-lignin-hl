@@ -11,11 +11,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Linear Mixed Effect Models
 
-This document was last updated on JANUARY 23, 2020.
+This document was last updated on JANUARY 26, 2020.
 
 This is an R Markdown document that will walk through all of the LMEMs run for Chapter 3 of my dissertation and the resulting manuscript.
 
 Model creation begins with fixed effects and random effects using a random intercept structure. Then, model selection follows the protocol outlined by Zuur et al. (2009, Chapter 5), beginning with a linear model, accounting for variance structure, optimizing the fixed structure, and validating best model fit using distribution of residuals and AIC values. All 24 of the below models follow the same format.
+
+**Shortcut Note: For future use, if you want to select and change multiple mentions of the same variable, hold CTRL + SHFT + ALT + M while highlighting the chosen variable and it will select all mentions within the document.**
 
 ```{r data and packages, include=FALSE}
 
@@ -100,7 +102,7 @@ These models will be organized in this file as they are listed in Appendix 4 of 
 
 ## Sigma 8
 
-```{r Sigma, echo = FALSE}
+```{r Sigma, include=FALSE}
 
 ### Data Exploration
 
@@ -238,7 +240,7 @@ Post hoc results: Stream - Estuary, p = 0.0020; Estuary - Reef, p = 0.0016; Stre
 
 ## Lambda
 
-```{r Lambda, echo=FALSE}
+```{r Lambda, include=FALSE}
 
 ### Data Exploration - boxplots and pairplots
 
@@ -381,7 +383,7 @@ Post hoc results: Stream - Estuary, p = 0.994 (NS); Estuary - Reef, p < 0.0001; 
 
 ## S/V
 
-```{r S/V, echo=FALSE}
+```{r S/V, include=FALSE}
 
 ### Data Exploration
 
@@ -507,7 +509,7 @@ Post hoc results: All Environment comparisons, p > 0.05 (NS).
 
 ## C/V
 
-```{r C/V, echo=FALSE}
+```{r C/V, include=FALSE}
 
 ### Data Exploration
 
@@ -645,7 +647,7 @@ Post hoc results: Stream - Estuary, p = 0.241 (NS); Stream - Reef, p < 0.0001; E
 
 ##P/V+S
 
-```{r P/V+S, echo=FALSE}
+```{r P/V+S, include=FALSE}
 
 ### Data Exploration
 
@@ -784,7 +786,7 @@ Post hoc results: NA.
 
 ##3,5Bd/V
 
-```{r 35Bd/V, echo=FALSE}
+```{r 35Bd/V, include=FALSE}
 
 ### Data Exploration
 
@@ -925,7 +927,7 @@ streamed <- stream[ -2, ]# Removes the necessary outliers.
 
 ##Sigma 8 (stream)
 
-```{r Sigma stream, echo=FALSE}
+```{r Sigma stream, include=FALSE}
 
 ### Data Exploration
 
@@ -1050,7 +1052,7 @@ Post hoc results: NA.
 
 ## Lambda (stream)
 
-```{r Lambda stream, echo=FALSE}
+```{r Lambda stream, include=FALSE}
 
 ### Data Exploration
 
@@ -1163,7 +1165,7 @@ Post hoc results: Mar 16 (C) - Jan 16 (B), p = 0.253 (NS); Jan 17 (I) - Jan 16 (
 
 ## S/V (stream)
 
-```{r S/V stream, echo=FALSE}
+```{r S/V stream, include=FALSE}
 
 ### Data Exploration
 
@@ -1291,7 +1293,7 @@ Post hoc results: Jan16 & Mar16, p = 0.00143 ; Jan16 & Jan17, p < 0.001; Mar16 &
 
 ## C/V (stream)
 
-```{r C/V stream, echo=FALSE}
+```{r C/V stream, include=FALSE}
 
 ### Data Exploration.
 
@@ -1413,7 +1415,7 @@ Post hoc results: Jan16 & Mar16, p = 0.9978 (NS) ; Jan16 & Jan17, p = 0.0003; Ma
 
 ## P/V+S (stream)
 
-```{r P/V+S stream, echo=FALSE}
+```{r P/V+S stream, include=FALSE}
 
 ### Data Exploration.
 
@@ -1538,7 +1540,7 @@ Post hoc results: Jan16 (B) & Mar16 (C), p = 0.0004 ; Jan16 (B) & Jan17 (I), p <
 
 # 3,5Bd/V (stream)
 
-```{r 35Bd/V stream, echo=FALSE}
+```{r 35Bd/V stream, include=FALSE}
 
 ### Data Exploration 
 
@@ -1686,7 +1688,7 @@ estuarine <- read.csv("estuary.csv") # Load the data back in.
 
 ## Sigma 8 (estuarine)
 
-```{r Sigma estuary, echo=FALSE}
+```{r Sigma estuary, include=FALSE}
 
 ### Data Exploration
 # Not testing region since I've decided it's arbitrary.
@@ -1799,7 +1801,7 @@ Post hoc results: NA.
 
 ##Lambda (estuarine)
 
-```{r Lambda estuary, echo=FALSE}
+```{r Lambda estuary, include=FALSE}
 
 ### Data Exploration
 
@@ -1920,7 +1922,7 @@ Post hoc results: NA.
 
 ## S/V (estuarine)
 
-```{r S/V estuary, echo=FALSE}
+```{r S/V estuary, include=FALSE}
 ### Data Exploration - boxplots and pairplots
 
 boxplot(S.V ~ LTER_Site, data = estuarine) # Site boxplot. Fixed effect.
@@ -2042,7 +2044,7 @@ Post hoc results: NA.
 
 ##C/V (estuarine)
 
-```{r C/V estuary, echo=FALSE}
+```{r C/V estuary, include=FALSE}
 ### Data Exploration - boxplots and pairplots
 
 boxplot(C.V ~ LTER_Site, data = estuarine) # Site boxplot. Fixed effect.
@@ -2172,7 +2174,7 @@ Post hoc results: April 2016 and July 2016, p = 0.0295; April 2016 and April 201
 
 ## P/V+S (estuarine)
 
-```{r P/V+S estuary, echo=FALSE}
+```{r P/V+S estuary, include=FALSE}
 
 ### Data Exploration - boxplots and pairplots
 boxplot(P..V.S. ~ LTER_Site, data = estuarine) # Site boxplot. Fixed effect.
@@ -2297,7 +2299,7 @@ Post hoc results: Top & Bottom, p < 0.0001 ; Apr16 & Mar/Apr17, p < 0.001; Apr16
 
 ## 3,5Bd/V (estuarine)
 
-```{r 35Bd/V estuary, echo=FALSE}
+```{r 35Bd/V estuary, include=FALSE}
 
 ### Data Exploration
 
@@ -2411,5 +2413,324 @@ The final model took the form : 3,5Bd/V ~ NA
 This translated to a formula of 3,5-Bd/V = NA.
 
 Post hoc results: NA.
+
+# Marine data
+
+```{r marine data, include=FALSE}
+
+# For the following code chunks, I'll use this same dataset since I've not added in any additional info like I did with the stream data.
+
+reef <- mastered %>%
+  filter(mastered$Environment=="Reef")
+
+# Ok, but in the following code, unless I create a separate dataset, all of the stream/marine site levels, for example, will still be in there, which I don't want for modeling purposes. So I'm going to do the following:
+
+#write.csv(reef,"marine.csv") # Export the data.
+marine <- read.csv("marine.csv") # Load the data back in.
+#str(marine) # Check to make sure its in the format I want. Perfect!
+
+# And now to make some final edits to be sure the factors are indeed factors:
+marine$Depthf <- as.factor(marine$Depthf) # Makes the water depth column a series of factors.
+marine$Group_3f <- as.factor(marine$Group_3f) # Makes the regional column a series of factors.
+
+```
+
+## Sigma 8 (marine)
+
+```{r Sigma marine, include=FALSE}
+
+### Data Exploration
+
+boxplot(Sigma8 ~ Type, data = marine) # Distance from stream boxplot. Fixed effect. 
+boxplot(Sigma8 ~ LTER_Site, data = marine) # Site boxplot. Random effect.
+boxplot(Sigma8 ~ Group, data = marine) # Date boxplot. Fixed effect.
+boxplot(Sigma8 ~ Depth, data = marine) # Water depth boxplot. Fixed effect.
+boxplot(Sigma8 ~ Core, data = marine) # Core boxplot. Fixed effect.
+
+sigmar <- marine %>%
+  dplyr::select(Type, LTER_Site, Depth, Core, Group, Sigma8) %>%
+  na.omit # Creates new dataset.
+
+pairs(sigmar) # Pairs plot. So, I'm going to investigate all four as fixed effects at first, but I think the Site should go in as a random effect too.
+
+sigmar$Type <- factor(sigmar$Type, levels = c("MarineRunoff", "Marine")) # Relevels.
+sigmar$fDepth <- as.factor(sigmar$Depth) # Make a new column with Depth as a factor.
+
+#### STEP 1: Create a linear regression and check residuals.
+
+op<- par(mfrow = c(1, 1), mar = c(3, 4, 1, 1))
+dotchart(sigmar$Sigma8, groups = sigmar$Site) # Sigma8 versus Site on right with outliers removed.
+par(op) # Eh, doesn't look that much better. So, I'm going to log transform it. Meh.
+
+sigmar$logSigma8 <- log10(sigmar$Sigma8) # Log transform into new column.
+
+op<- par(mfrow = c(1, 2), mar = c(3, 4, 1, 1))
+dotchart(sigmar$Sigma8, groups = sigmar$Site) # Sigma8 versus Site on left with outliers removed.
+dotchart(sigmar$logSigma8, groups = sigmar$Site) # LogSigma8 versus Site on righ.
+par(op) # Muuuuuuch better.
+
+pairs(sigmar)
+
+# Based on boxplots & pairplots : 
+# Response variables - logSigma8
+# Explanatory variables - Type, Site, Depth, Core, Group
+
+s1 <- lm(logSigma8 ~ Type + LTER_Site + fDepth + Core + Group, data = sigmar) # Initial linear model.
+
+rs1 <- rstandard(s1) # Assigns standardized residuals to rs1.
+plot(rs1 ~ sigmar$LTER_Site, xlab = "Site",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Since boxplots are all about zero, there is no within-site correlation, so it WILL NOT be used as a random effect.
+
+plot(rs1 ~ sigmar$Group, xlab = "Date",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Group looks the same - all about zero.
+
+plot(rs1 ~ sigmar$fDepth, xlab = "Depth",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Depth is exactly about zero.
+
+plot(rs1 ~ sigmar$Core, xlab = "Core Section",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Core is exactly about zero.
+
+# Ok, due to sampling structure, going to keep in LTER_Site as a random effect as I've done above.
+
+#### STEP 2: Fit the lm() with GLS and compare to lme().
+
+s2 <- gls(logSigma8 ~ Type + fDepth + Core + Group, data = sigmar) # Linear regression since it has no additional calls. Removed Site as a fixed effect because it resulted in an error message.
+
+s3 <- lme(logSigma8 ~ Type + fDepth + Core + Group, random =~1 | LTER_Site, data = sigmar) # Creates the first LMEM with a random term so the lme() function works.
+
+anova(s2, s3) # Compares the two models. s3 preferred with an AIC value of 421.9460.
+
+#### STEP 3: Decide on a variance structure (aka random terms).
+
+plot(s3, col=1) # Check the residuals before jumping right in to applying variance transformation.
+qqnorm(s3) # This actually looks pretty good - so I'm going to skip the added variance structure. (This is mostly likely due to log transformation.)
+
+# STEP 4: Fit the lme().
+
+# Using s3 <- lme(logSigma8 ~ Type + fDepth + Core + Group, random =~1 | LTER_Site, data = sigmar) 
+
+# STEP 5: Compare the lm() and lme().
+
+# See Step 2.
+
+# STEP 6: Everything ok? Check residuals.
+
+# See Step 3.
+
+# STEP 7/8: Step-wise Optimal Fixed Structure
+
+s3_ml <- lme(logSigma8 ~ Type + fDepth + Core + Group, 
+             random =~1 | LTER_Site, method = "ML", data = sigmar) # ML model structure.
+
+s3sub1 <- update(s3_ml, .~. -Type) # Removes Type.
+s3sub2 <- update(s3_ml, .~. -fDepth) # Removes Depth.
+s3sub3 <- update(s3_ml, .~. -Core) # Removes Core.
+s3sub4 <- update(s3_ml, .~. -Group) # Removes Group.
+
+anova(s3_ml, s3sub1, s3sub2, s3sub3, s3sub4) # Compare the models. s3_ml preferred with an AIC value of 395.4894, so keep everything in.
+
+# s3_ml is the final full model!!!
+
+# STEP 9: Refit with REML
+
+sfinal <- lme(logSigma8 ~ Type + fDepth + Core + Group, 
+              random =~1 | LTER_Site, method = "REML", data = sigmar) # YIPEE!!!
+
+# Output of the model.
+summary(sfinal)
+
+# Checking residuals.
+plot(sfinal, col=1) # Not perfect, but no pattern.
+qqnorm(sfinal) # This makes me feel pretty good.
+qqnorm(sfinal, ~ranef (.), col = 1) # Looking good!
+intervals(sfinal)# Show intervals.
+
+# Final results.
+anova(sfinal)
+
+# STEP 10: What does this mean in WORDS?
+
+# My model suggests there is NO significant effect of ecosystem type (marine sites near and far from stream mouths) on Sigma 8 concentrations of a given sediment sample. However, Date, Depth (10m/20m) and Core (Top/Bottom section) were significant.
+
+# Equation: log(Sigma 8) = -0.70 - 0.26[Marine] + 0.6[20m] - 0.19[Top] + 0.01[GroupE] - 0.09[GroupG] + 0.06[GroupJ] + random
+
+# BONUS POST HOC:
+
+sHSD_Depth <- glht(sfinal, linfct=mcp(fDepth="Tukey")) # Tukey's post hoc analysis on fDepth factor.
+summary(sHSD_Depth) # 20 and 10 m are significantly different from one another (p < 0.0001).
+
+sHSD_Core <- glht(sfinal, linfct=mcp(Core="Tukey")) # Tukey's post hoc analysis on Core factor.
+summary(sHSD_Core) # Top and bottom core sections are significantly different (p < 0.0001).
+
+sHSD_Group <- glht(sfinal, linfct=mcp(Group="Tukey")) # Tukey's post hoc analysis on Date factor.
+summary(sHSD_Group) # June 2017 (J) and March 2017 (G) were significantly different (p = 0.0187).
+
+# Value calculations for manuscript:
+
+sigmarmeans <- sigmar %>% # Takes the original dataset and then ...
+  group_by(Type) %>%     # Groups data and then ...
+  summarize(meanSig = mean(Sigma8, na.rm = TRUE), sdSig = sd(Sigma8, na.rm = TRUE)) %>% # Calculates summaries ...
+  ungroup()
+
+```
+
+The final model took the form : logSigma8 ~ Type + Depth + Core + Group + 1|LTER_Site
+
+This translated to a formula of log(Sigma8) = -0.70 - 0.26[Marine] + 0.6[20m] - 0.19[Top] + 0.01[GroupE] - 0.09[GroupG] + 0.06[GroupJ] + random.
+
+Post hoc results: 20M - 10M, p < 0.0001; Top - Bottom, p < 0.0001; March 2017 - June 2017, p = 0.0187.
+
+## Lambda (marine)
+
+```{r Lambda marine, include=FALSE}
+
+### Data Exploration
+
+boxplot(Lambda ~ Type, data = marine) # Distance from stream boxplot. Fixed effect. 
+boxplot(Lambda ~ LTER_Site, data = marine) # Site boxplot. Random effect. (I'm not going to even try and include it as a fixed effect given what happened above.)
+boxplot(Lambda ~ Group, data = marine) # Date boxplot. Fixed effect.
+boxplot(Lambda ~ Depth, data = marine) # Depth boxplot. Fixed effect.
+boxplot(Lambda ~ Core, data = marine) # Core section boxplot. Fixed effect.
+
+lammar <- marine %>%
+  dplyr::select(Type, LTER_Site, Group, Depth, Core, Lambda) %>%
+  na.omit # Creates new dataset.
+
+pairs(lammar) # Pairs plot.
+
+lammar$Type <- factor(lammar$Type, levels = c("MarineRunoff", "Marine")) # Relevels for simpler labeling later.
+
+#### STEP 1: Create a linear regression and check residuals.
+
+op<- par(mfrow = c(1, 1), mar = c(3, 4, 1, 1))
+dotchart(lammar$Lambda, groups = lammar$Site) # Lambda versus Site.
+par(op) # Looks pretty good, save a few outliers still, but I'm not going to log().
+
+# Based on boxplots & pairplots : 
+# Response variables - Lambda
+# Explanatory variables - Type, Depth, Core, Group
+
+lammar$fDepth <- as.factor(lammar$Depth) # Converts Depth to a factor.
+
+t1 <- lm(Lambda ~ Type + fDepth + Core + Group, data = lammar) # Initial linear model.
+rt1 <- rstandard(t1) # Assigns standardized residuals to rt1.
+
+plot(rt1 ~ lammar$LTER_Site, xlab = "Site",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Yes, put in random term.
+
+plot(rt1 ~ lammar$Group, xlab = "Date",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # No, keep out of random term.
+
+plot(rt1 ~ lammar$Core, xlab = "Core Section",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # No, keep out of random term.
+
+plot(rt1 ~ lammar$fDepth, xlab = "Water Depth",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # No, keep out of random term.
+
+plot(rt1 ~ lammar$Type, xlab = "Distance from Stream",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # No, keep out of random term.
+
+#### STEP 2: Fit the lm() with GLS and compare to lme().
+
+t2 <- gls(Lambda ~ Type + fDepth + Core + Group, data = lammar) # Effectively a linear regression.
+t3 <- lme(Lambda ~ Type + fDepth + Core + Group, random =~1 | LTER_Site, data = lammar) # First LMEM.
+anova(t2, t3) # Compares the two models. t3 preferred with an AIC value of 775.1981.
+
+#### STEP 3: Decide on a variance structure (aka random terms).
+
+plot(t3, col=1) # We check the residuals before jumping right in to applying variance transformation.
+qqnorm(t3) # This is actually meh - so I'm going to add in a variance structure.
+
+# Looks like we should add in the varIden() variance structure for the observations in (based on boxplots) different Ecosystem Types (which I also chose based on past models).
+
+t4 <- lme(Lambda ~ Type + fDepth + Core + Group,
+           random =~1 | LTER_Site, data = lammar, 
+           weights = varIdent(form =~1 | Type)) # Variance structure by Ecosystem.
+anova(t3, t4) # Compares both models. t4 is much better with an AIC value of 762.3887.
+
+plot(t4, col=1) 
+qqnorm(t4) # Residuals look identical. I'm going to go back to t3, because it's simpler and I feel like does the same thing. I think the issue here may be lack of log() transformation, but I'm hesitant to do that since I didn't do it in treating the entire dataset.
+
+# STEP 4: Fit the lme().
+
+# Using t3 <- lme(Lambda ~ Type + fDepth + Core + Group, random =~1 | LTER_Site, data = lammar)
+
+# STEP 5: Compare the lm() and lme().
+
+# See Step 2.
+
+# STEP 6: Everything ok? Check residuals.
+
+# See Step 3. 
+
+# STEP 7/8: Step-wise Optimal Fixed Structure
+
+t3_ml <- lme(Lambda ~ Type + fDepth + Core + Group, 
+              random =~1 | LTER_Site, method = "ML", data = lammar) # ML model structure.
+
+t3sub1 <- update(t3_ml, .~. -Type) # Removes Type.
+t3sub2 <- update(t3_ml, .~. -fDepth) # Removes Depth.
+t3sub3 <- update(t3_ml, .~. -Core) # Removes Core.
+t3sub4 <- update(t3_ml, .~. -Group) # Removes Group.
+
+anova(t3_ml, t3sub1, t3sub2, t3sub3, t3sub4) # Compare the models. t3_ml preferred with an AIC value of 754.0156, so keep everything in!
+
+# STEP 9: Refit with REML
+
+tfinal <- lme(Lambda ~ Type + fDepth + Core + Group, 
+              random =~1 | LTER_Site , method = "REML", data = lammar)
+
+# Output of the model.
+summary(tfinal)
+
+# Checking residuals.
+plot(tfinal, col=1) # Not perfect, but no huge pattern.
+qqnorm(tfinal) # Looking ok.
+qqnorm(tfinal, ~ranef (.), col = 1) # Looks good.
+intervals(tfinal) # Show intervals.
+
+# Final results.
+anova(tfinal)
+
+# STEP 10: What does this mean in WORDS?
+
+# My model suggests there is NO significant effect of ecosystem type (marine sites near and far from stream mouths) on Lambda concentrations of a given sediment sample. Group (date sampled), fDepth (water depth sampled), and Core (top v. bottom) were significant.
+
+# Equation: Lambda = 0.41 + 0.40[MarineRunoff] + 0.50[20m] - 0.26[Top] + 0.28[GroupE] + 0.25[GroupG] + 0.42[GroupJ] + random
+
+# BONUS POST HOC:
+
+tHSD_Depth <- glht(tfinal, linfct=mcp(fDepth="Tukey")) # Tukey's post hoc analysis on fDepth factor.
+summary(tHSD_Depth) # 20 and 10 m are significantly different from one another (p < 0.0001).
+
+tHSD_Core <- glht(tfinal, linfct=mcp(Core="Tukey")) # Tukey's post hoc analysis on Core factor.
+summary(tHSD_Core) # Top and bottom core sections are significantly different (p = 0.0002).
+
+tHSD_Group <- glht(tfinal, linfct=mcp(Group="Tukey")) # Tukey's post hoc analysis on Date factor.
+summary(tHSD_Group) # Dec 2015 (A) and June 2017 (J) were significantly different (p < 0.001).
+
+# Value calculations for manuscript:
+
+lammarmeans <- lammar %>% # Takes the original dataset and then ...
+  group_by(Type) %>%     # Groups data and then ...
+  summarize(meanLam = mean(Lambda, na.rm = TRUE), sdLam = sd(Lambda, na.rm = TRUE)) %>% # Calculates summaries ...
+  ungroup()
+
+```
+
+The final model took the form : Lambda ~ Type + Depth + Core + Group + 1|LTER_Site
+
+This translated to a formula of Lambda = 0.41 + 0.40[MarineRunoff] + 0.50[20m] - 0.26[Top] + 0.28[GroupE] + 0.25[GroupG] + 0.42[GroupJ] + random.
+
+Post hoc results: 20M - 10M, p < 0.0001; Top - Bottom, p = 0.0002; December 2015 (A) - June 2017 (J), p < 0.001 (all others NS).
 
 This is the end of the RMarkdown document.
