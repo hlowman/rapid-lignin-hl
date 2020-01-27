@@ -1,0 +1,137 @@
+---
+title: "Appendix 3"
+author: "Heili Lowman"
+date: "1/27/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Updates for Appendix 3
+
+This document was last updated on JANUARY 27, 2020.
+
+This is an R Markdown document that will walk through all of the calculations necessary to fix Appendix 3 of my third dissertation chapter and the associated manuscript due to the removal of the 7 outliers in the linear mixed effects model portion.
+
+First, I will load the same dataset and necessary packages.
+
+```{r data and packages, include=FALSE}
+
+master <- read.csv("RAPID_Master_Datasheet_add_region_streamcode.csv") # Loads the newly updated dataset, as of April 8, 2019. This same dataset is used for the linear mixed effects models.
+
+# In addition, all NDs from Matthieu's original reports are replaced as NAs.
+
+# This dataset has already been QAQCed.
+
+library(tidyverse)
+
+```
+
+Then, I will be sure all the necessary columns contain values in numeric format.
+
+```{r tidying up, include=FALSE}
+
+# Format
+str(master) # Shows the format of each of the columns in the dataset.
+
+# Checking in on any ND/NA, <0.01, and other issues in each of the columns that contain data that will be used in Appendix 3.
+
+# %ON - Format ok!
+
+# %OC - Format ok!
+
+# C/N - see below...
+
+master$C.N[master$C.N == "#DIV/0!"] <- NA # Replaces the one indivisible value with an NA since %ON = 0 in this case.
+
+master$C.Nnum <- as.numeric(as.character(master$C.N)) # Makes the C:N column first a series of characters and then numeric. If I don't do the first step, it spits out numbers that are wrong and WAY too large.
+
+CNonly <- master %>%
+  select(C.N, C.Nnum) # Creates a new dataset to make sure the numbers formatted properly. Looks good!
+
+# d13C - There are two outliers that I previously removed in the figures. I'm going to keep these in in this iteration. Otherwise, formatting is ok!
+
+# d15N - Format ok!
+
+# Lambda - Format ok!
+
+# Sigma8 - Format ok!
+
+# S - Format ok!
+
+# V - Format ok!
+
+# C - So, there are a lot of "0"s and "<0.01"s, with real values then reported for C/V, which means they can't be 0 in reality. So, I'm going to report these as the LOD (0.01) for table aggregation purposes.
+
+master$Ced <- master$C # Creates a new column where I will manipulate the values.
+
+master$Ced[master$Ced == "0"] <- "0.01" # Replaces the "0"s with "0.01"s.
+master$Ced[master$Ced == "<0.01"] <- "0.01" # Replaces the "<0.01"s with "0.01"s.
+master$Cnum <- as.numeric(as.character(master$Ced)) # Makes the edited cinnamyl column numeric.
+
+Conly <- master %>%
+  select(C, Ced, Cnum) # Creates a new dataset to make sure the numbers formatted properly. Looks good!
+
+# P - We've got similar issues here as we did with C and C:N.
+
+master$P[master$P == "ND"] <- NA # Replaces the "ND" with an NA.
+
+master$Pnum <- as.numeric(as.character(master$P)) # Makes the p-phenol column numeric.
+
+Ponly <- master %>%
+  select(P, Pnum) # Creates a new dataset to make sure the numbers formatted properly. Looks good!
+
+# S/V - Format ok! And double checked to be sure S, V, and resulting S.V values make sense.
+
+# C/V - Format ok! Also checked to be sure C, V, and resulting C.V values make sense. There are ~2 values for which C is "NA" and there is a value reported for C.V, which I believe is a rounding issue not fully reported by two significant figures, so I'm going to leave them as is and trust the reported C.V values.
+
+# P/(V+S) - Format ok! Also checked to be sure P and P..V.S. values tracked, and they do!
+
+# 3,5-Bd/V - Format ok! Also checked to be sure V and Bd.V values tracked, and they do!
+
+# See e-mail correspondence with Matthieu on 1/22/2020: "ND does not mean 0. When doing analytical measurements using GC/MS or others detectors you never can say that you have 0. Indeed, due to analytical issues you have limits of quantification and limits of detection. To summarize, when you are under LOD, it does not mean that you do not have the presence of the analyte but that you cannot decipher it from the background."
+
+# So, all NAs that were previously NDs will be left as such since they are not actually a 0 value.
+
+# Alright, so the seven outliers I'm removing will be 56, 66, 164, 238, 300, 387, and 389 from the original dataset. For reasoning on these 7, see LMEM Markdown file in this same project.
+
+mastered <- master[ -c(56, 66, 164, 238, 300, 387, 389), ] # Removes outliers from original dataset.
+
+```
+
+Finally, I will calculate the values for Appendix 3 and export them into a .csv file for reformatting.
+
+```{r calculations, include=FALSE}
+
+mastered$Type <- factor(mastered$Type, levels = c("Stream", "Estuarine", "MarineRunoff", "Marine")) # Relevels for easier formatting.
+
+# The calculated table below is slightly different than the original because some columns were not chosen to be included in the final appendix, and I've reordered them a bit to make copy/pasting easier.
+
+appendix3 <- mastered %>% # Takes the original dataset and then ...
+  group_by(Type, Group_2) %>%     # Groups data by environment and date and then ...
+  summarize(ON = mean(perc_OrgN, na.rm = TRUE), sdON = sd(perc_OrgN, na.rm = TRUE),
+            OC = mean(perc_OrgC, na.rm = TRUE), sdOC = sd(perc_OrgC, na.rm = TRUE),
+            CN = mean(C.Nnum, na.rm = TRUE), sdCN = sd(C.Nnum, na.rm = TRUE),
+            D13C = mean(d13C, na.rm = TRUE), sdD13C = sd(d13C, na.rm = TRUE),
+            D15N = mean(d15N, na.rm = TRUE), sdD15N = sd(d15N, na.rm = TRUE),
+            Lam = mean(Lambda, na.rm = TRUE), sdLam = sd(Lambda, na.rm = TRUE),
+            Sig8 = mean(Sigma8, na.rm = TRUE), sdSig8 = sd(Sigma8, na.rm = TRUE),
+            s = mean(S, na.rm = TRUE), sds = sd(S, na.rm = TRUE),
+            v = mean(V, na.rm = TRUE), sdv = sd(V, na.rm = TRUE),
+            c = mean(Cnum, na.rm = TRUE), sdc = sd(Cnum, na.rm = TRUE),
+            p = mean(Pnum, na.rm = TRUE), sdp = sd(Pnum, na.rm = TRUE),
+            sv = mean(S.V, na.rm = TRUE), sdsv = sd(S.V, na.rm = TRUE),
+            cv = mean(C.V, na.rm = TRUE), sdcv = sd(C.V, na.rm = TRUE),
+            pvs = mean(P..V.S., na.rm = TRUE), sdpvs = sd(P..V.S., na.rm = TRUE),
+            bdv = mean(Bd.V, na.rm = TRUE), sdbdv = sd(Bd.V, na.rm = TRUE)) %>% # Calculations ...
+  ungroup() # Removes groupings for future purposes.
+
+# YAY!!!
+
+#write.csv(appendix3, "appendix3.csv") # Exports this dataset so I can reformat in Excel/Word.
+
+```
+
+End of RMarkdown document.
