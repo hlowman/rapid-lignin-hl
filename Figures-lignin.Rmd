@@ -1,0 +1,92 @@
+---
+title: "Updated Figures"
+author: "Heili Lowman"
+date: "1/27/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Updates for RAPID project figures
+
+This document was last updated on JANUARY 27, 2020.
+
+This is an R Markdown document that will walk through all of the code used to create updated figures for my third dissertation chapter and the associated manuscript due to the removal of the 7 outliers in the linear mixed effects model portion.
+
+First, I will load the same dataset and necessary packages.
+
+```{r data and packages, include=FALSE}
+
+master <- read.csv("RAPID_Master_Datasheet_add_region_streamcode.csv") # Loads the newly updated dataset, as of April 8, 2019. This same dataset is used for the linear mixed effects models.
+
+# In addition, all NDs from Matthieu's original reports are replaced as NAs. For reasoning on why they are not 0s, see either of the other RMarkdown files in this project folder.
+
+# Alright, so the seven outliers I'm removing will be 56, 66, 164, 238, 300, 387, and 389 from the original dataset. For reasoning on these 7, see LMEM Markdown file in this same project.
+
+mastered <- master[ -c(56, 66, 164, 238, 300, 387, 389), ] # Removes outliers from original dataset.
+
+# This dataset has already been QAQCed.
+
+library(tidyverse)
+
+```
+
+### Figure 3 A & B
+
+```{r Fig3, echo=FALSE}
+
+# First, we will plot overall Sigma 8 and Lambda values.
+
+Fig3_Stats <- mastered %>% # Takes the original dataset and then ...
+  group_by(Group, Environment) %>% # Groups by date and environment and then ...
+  summarize(Sig8 = mean(Sigma8, na.rm = TRUE), Sig8sd = sd(Sigma8, na.rm = TRUE), 
+            Lam = mean(Lambda, na.rm = TRUE), Lamsd = sd(Lambda, na.rm = TRUE)) %>% # Summarizes and then...
+  ungroup() # Ungroups data.
+
+Fig3_Stats$Environment <- factor(Fig3_Stats$Environment, levels = c( "Stream", "Estuary", "Reef")) # Relevels.
+Fig3_Stats$Group <- factor(Fig3_Stats$Group, levels = c( "A", "B", "C", "D", "E", "F", "I", "H", "G", "J", "K")) # Relevel the "Group" column so that it's presented in the best chronological order.
+
+#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig3A.tiff", width=6, height=4, unit="in", res=400) 
+fig3a <- ggplot(Fig3_Stats, aes(Group, Sig8, shape=Environment, fill=Environment)) +
+  scale_x_discrete(labels = c("12/2015", "01/2016", "03/2016", "04/2016", "06/2016", "06/2016", "01/2017", "03/2017", "03/2017", "06/2017", "06/2017")) +
+  geom_point(size = 6,
+             stroke = 0.75) + 
+  scale_shape_manual(values = c(21, 24, 22)) +
+  scale_fill_manual(values = c("white", "lightgrey", "black")) +
+  geom_errorbar(data=Fig3_Stats, aes(ymin=Sig8-Sig8sd,ymax=Sig8+Sig8sd), width=0.1) +
+  xlab("Sample Date") +
+  ylab("Sigma 8 (mg/10 g sample)") + 
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
+  theme(text=element_text(family="Times New Roman", size=14)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  theme(axis.title.x=element_blank()) +
+  theme(legend.title = element_blank())
+#dev.off()
+
+fig3a
+
+#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig3B.tiff", width=6, height=4, unit="in", res=400) 
+fig3b <- ggplot(Fig3_Stats, aes(Group, Lam, shape=Environment, fill=Environment)) +
+  scale_x_discrete(labels = c("12/2015", "01/2016", "03/2016", "04/2016", "06/2016", "06/2016", "01/2017", "03/2017", "03/2017", "06/2017", "06/2017")) +
+  geom_point(size = 6,
+             stroke = 0.75) + 
+  scale_shape_manual(values = c(21, 24, 22)) +
+  scale_fill_manual(values = c("white", "lightgrey", "black")) +
+  geom_errorbar(data=Fig3_Stats, aes(ymin=Lam-Lamsd,ymax=Lam+Lamsd), width=0.1) +
+  xlab("Sample Date") +
+  ylab("Lambda (mg/100 mg Organic C)") + 
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
+  theme(text=element_text(family="Times New Roman", size=14)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  theme(axis.title.x=element_blank()) +
+  theme(legend.title = element_blank())
+#dev.off()
+
+fig3b
+
+```
+
