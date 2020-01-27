@@ -3042,4 +3042,299 @@ This translated to a formula of C/V = 0.14 - 0.06[GroupE] - 0.04[GroupG] - 0.02[
 
 Post hoc results: Dec15 & Jun16, p < 0.001 ; Dec15 & Mar17, p = 0.00676; Jun16 & Jun17, p = 0.02117; 20 m & 10 m, p = 0.0384.
 
+## P/V+S (marine)
+
+```{r P/V+S marine, include=FALSE}
+
+### Data Exploration - boxplots and pairplots
+boxplot(P..V.S. ~ LTER_Site, data = marine) # Site boxplot. Random effect.
+boxplot(P..V.S. ~ Group, data = marine) # Date boxplot. Fixed effect.
+boxplot(P..V.S. ~ Depth, data = marine) # Depth boxplot. Fixed effect.
+boxplot(P..V.S. ~ Type, data = marine) # Distance from stream boxplot. Fixed effect.
+boxplot(P..V.S. ~ Core, data = marine) # Core boxplot. Fixed effect.
+
+# So, based on boxplots, I move forward with Group (date sampled), (water) Depth, Core (section) and Type (near/far from stream) as fixed variables and Site as a random variable.
+
+pvsmar <- marine %>%
+  dplyr::select(Type, LTER_Site, Group, Depth, Core, P..V.S.) %>%
+  na.omit # Create new dataset.
+
+pvsmar$Depthf <- as.factor(pvsmar$Depth) # Makes depth a factor.
+
+op<- par(mfrow = c(1, 1), mar = c(3, 4, 1, 1))
+dotchart(pvsmar$P..V.S., groups = pvsmar$LTER_Site) # P/V+S versus Site.
+par(op) # Looking ok. There's two pretty big outliers, so I'm going to log-transform as I did for the entire dataset up above.
+
+pvsmar$logPVS <- log10(pvsmar$P..V.S.) # Makes log-transformed column.
+
+op<- par(mfrow = c(1, 2), mar = c(3, 4, 1, 1))
+dotchart(pvsmar$P..V.S., groups = pvsmar$LTER_Site) # P/V+S versus Site.
+dotchart(pvsmar$logPVS, groups = pvsmar$LTER_Site) # log(P/V+S) versus Site.
+par(op) # Looking MUCH better. 
+
+pairs(pvsmar) # Quick pairs plot to check correllated variables.
+
+#### STEP 1: Create a linear regression and check residuals.
+
+# Response variables - P/V+S
+# Explanatory variables - Type, Group, Depth, Core
+
+w1 <- lm(logPVS ~ Type + Group + Depthf + Core, data = pvsmar) # Initial linear model.
+rw1 <- rstandard(w1) # Assigns standardized residuals to rw1.
+plot(rw1 ~ pvsmar$LTER_Site, xlab = "Site",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Keeping as part of random effect.
+
+plot(rw1 ~ pvsmar$Group, xlab = "Date Sampled",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Remove from random structure.
+
+plot(rw1 ~ pvsmar$Depthf, xlab = "Depth Sampled",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Also not necessary as a random effect.
+
+plot(rw1 ~ pvsmar$Core, xlab = "Depth Sampled",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Also not necessary as a random effect.
+
+#### STEP 2: Fit the lm() with GLS and compare to lme().
+
+w2 <- gls(logPVS ~ Type + Group + Depthf + Core, data = pvsmar) # Linear regression.
+w3 <- lme(logPVS ~ Type + Group + Depthf + Core, 
+          random =~1 | LTER_Site, data = pvsmar ) # First LMEM with random term.
+anova(w2, w3) # Compares the two models. w3 preferred with AIC value of 24.77337.
+
+# STEP 3: Decide on a variance structure (aka random terms and correlation structure if any).
+
+plot(w3, col=1) # Plots residuals. Yeah, we need an additional variance structure.
+
+w4 <- lme(logPVS ~ Type + Group + Depthf + Core, 
+          random =~1 | LTER_Site, data = pvsmar,
+          weights = varIdent(form =~1 | Depthf)) # Creates structure including different variance allowed by water depth based on the variances displayed by boxplots above.
+anova(w3, w4) # Compares the two models. w4 is better with an AIC value of 4.798535.
+
+# STEP 4: Fit the lme().
+
+# Using w4 <- lme(P..V.S. ~ Type + Group + Depthf + Core, 
+#          random =~1 | LTER_Site, data = pvsmar,
+#          weights = varIdent(form =~1 | Depthf))
+
+# STEP 5: Compare the lm() and lme().
+
+anova(w2,w4) # w4 still preferred with an AIC value of 4.79854.
+
+# STEP 6: Everything ok? Check residuals.
+
+plot(w4, col=1) # Residuals look better. I've got those two outliers but oh well.
+qqnorm(w4) # Looks fine.
+
+# STEP 7/8: Step-wise Optimal Fixed Structure
+
+w4_ml <- lme(logPVS ~ Type + Group + Depthf + Core, 
+             random =~1 | LTER_Site, method = "ML", data = pvsmar,
+             weights = varIdent(form =~1 | Depthf)) # ML model structure.
+w4sub1 <- update(w4_ml, .~. -Type) # Removes near/far classification.
+w4sub2 <- update(w4_ml, .~. -Group) # Removes date.
+w4sub3 <- update(w4_ml, .~. -Depthf) # Removes water depth.
+w4sub4 <- update(w4_ml, .~. -Core) # Removes water depth.
+anova(w4_ml, w4sub1, w4sub2, w4sub3, w4sub4) # Compares all models. w4 is preferred with an AIC value of -30.33340, so keep everything in.
+
+# STEP 9: Refit with REML
+
+wfinal <- lme(logPVS ~ Type + Group + Depthf + Core,
+              random =~1 | LTER_Site, method = "REML", data = pvsmar, 
+              weights = varIdent(form =~1 | Depthf))
+
+# Output of the model.
+summary(wfinal)
+plot(wfinal, col=1) # Checking residuals.
+qqnorm(wfinal) # Look pretty good considering low # of samples.
+qqnorm(wfinal, ~ranef (.), col = 1) # Plot of random effect residuals, looks ok...
+intervals(wfinal) # Show intervals.
+
+# Find Results.
+anova(wfinal) # Output for the paper.
+
+# STEP 10: What does this mean in WORDS?
+
+# I applied a linear mixed effect modelling approach because the data are nested. My model suggests there is a significant effect of location near/far from stream, date sampled, core section, AND water depth on P/V+S signatures of a given marine sediment sample. Random intercept by sample site was also included as well as a variance term for water depth.
+
+# Equation: P/V+S = - 0.48 - 0.14[MarineRunoff] - 0.07[GroupE] - 0.15[GroupG] - 0.45[GroupJ] - 0.22[Depth20] + 0.08[Top] + random + variance
+
+# BONUS : Tukey's HSD Post Hoc
+wHSD_Type <- glht(wfinal, linfct=mcp(Type="Tukey"))
+summary(wHSD_Type) # All significantly different.
+
+wHSD_Group <- glht(wfinal, linfct=mcp(Group="Tukey"))
+summary(wHSD_Group) # All significantly different.
+
+wHSD_Depth <- glht(wfinal, linfct=mcp(Depthf="Tukey"))
+summary(wHSD_Depth) # All significantly different.
+
+wHSD_Core <- glht(wfinal, linfct=mcp(Core="Tukey"))
+summary(wHSD_Core) # All significantly different.
+
+# Value calculations for manuscript:
+
+pvsmarmeans <- pvsmar %>% # Takes the original dataset and then ...
+  group_by(Type) %>%     # Groups data and then ...
+  summarize(meanPVS = mean(P..V.S., na.rm = TRUE), sdPVS = sd(P..V.S., na.rm = TRUE)) %>% # Calculates summaries ...
+  ungroup()
+
+```
+
+The final model took the form : log(P/V+S) ~ Type + Group + Depth + Core + 1|LTER_Site + 1|Depth(var)
+
+This translated to a formula of log(P/V+S) = - 0.48 - 0.14[MarineRunoff] - 0.07[GroupE] - 0.15[GroupG] - 0.45[GroupJ] - 0.22[Depth20] + 0.08[Top] + random + variance.
+
+Post hoc results: Marine & MarineRunoff, p = 0.0149 ; Top & Bottom, p = 0.000951; Dec15 & Mar17, p < 0.001; Dec15 & Jun17, p < 0.001; Jun16 & Jun17, p < 0.001; Mar17 & Jun17, p < 0.001; 20m & 10m, p < 0.0001.
+
+## 3,5Bd/V (marine)
+
+```{r 35Bd/V marine, include=FALSE}
+
+### Data Exploration - boxplots and pairplots
+
+boxplot(Bd.V ~ Type, data = marine) # Distance from stream boxplot. Fixed effect.
+boxplot(Bd.V ~ LTER_Site, data = marine) # Site boxplot. Random effect.
+boxplot(Bd.V ~ Group, data = marine) # Date boxplot. Fixed effect?
+boxplot(Bd.V ~ Depth, data = marine) # Depth boxplot. Fixed effect.
+boxplot(Bd.V ~ Core, data = marine) # Core boxplot. Fixed effect.
+
+# So, based on boxplots, I move forward with Type (near/far), Group (date sampled), Core (section) and (water) Depth as fixed variables and Site as a random effect.
+
+bdvmar <- marine %>%
+  dplyr::select(Type, LTER_Site, Group, Depth, Core, Bd.V) %>%
+  na.omit # Create new dataset.
+
+bdvmar$Depthf <- as.factor(bdvmar$Depth) # Transforms depth into a factor.
+
+op<- par(mfrow = c(1, 1), mar = c(3, 4, 1, 1))
+dotchart(bdvmar$Bd.V, groups = bdvmar$LTER_Site) # 3,5Bd/V versus Site.
+par(op) # Looking ok. I'm going to log-transform as I did with PVS.
+
+bdvmar$logBDV <- log10(bdvmar$Bd.V) # Makes log-transformed column.
+
+op<- par(mfrow = c(1, 2), mar = c(3, 4, 1, 1))
+dotchart(bdvmar$Bd.V, groups = bdvmar$LTER_Site) # 3,5Bd/V versus Site.
+dotchart(bdvmar$logBDV, groups = bdvmar$LTER_Site) # log(3,5Bd/V) versus Site.
+par(op) # Looks much better.
+
+pairs(bdvmar) # Quick pairs plot to check correllated variables.
+
+#### STEP 1: Create a linear regression and check residuals.
+
+# Response variables - 3,5-Bd/V
+# Explanatory variables - Type, Group, Depth, Core
+
+x1 <- lm(logBDV ~ Type + Group + Depthf + Core, data = bdvmar) # Initial linear model.
+rx1 <- rstandard(x1) # Assigns standardized residuals to rx1.
+
+plot(rx1 ~ bdvmar$LTER_Site, xlab = "Site",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Yep, keep site as a random effect.
+
+plot(rx1 ~ bdvmar$Group, xlab = "Date Sampled",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Group will not be a random effect.
+
+plot(rx1 ~ bdvmar$Core, xlab = "Core Section",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Core will not be a random effect.
+
+plot(rx1 ~ bdvmar$Type, xlab = "Distance from Stream",
+     ylab = "Standardised residuals") # Plots said residuals.
+abline(0,0) # Type will not be a random effect.
+
+#### STEP 2: Fit the lm() with GLS and compare to lme().
+
+x2 <- gls(logBDV ~ Type + Group + Depthf + Core, data = bdvmar) # Linear regression.
+x3 <- lme(logBDV ~ Type + Group + Depthf + Core, 
+          random =~1 | LTER_Site , data = bdvmar) # First LMEM with random term.
+anova(x2, x3) # Compares the two models. x3 preferred with an AIC value of 71.58302.
+
+# STEP 3: Decide on a variance structure.
+
+plot(x3, col=1) # Plots residuals before immediately applying variance transformation. We definitely need one.
+
+x4 <- lme(logBDV ~ Type + Group + Depthf + Core,  
+          random =~1 | LTER_Site, data = bdvmar,
+          weights = varIdent(form =~1 | Depthf)) # Again this is based on the spread I saw in the boxplots, and it was greatest in the Depth data.
+
+anova(x3,x4) # Compares the two models. x4 preferred with an AIC value of 8.60486.
+
+# STEP 4: Fit the lme().
+
+# Using x4 <- lme(logBDV ~ Type + Group + Depthf + Core,  
+#          random =~1 | LTER_Site, data = bdvmar,
+#          weights = varIdent(form =~1 | Depthf))  
+
+# STEP 5: Compare the lm() and lme().
+
+anova(x2,x4) # x4 still preferred with an AIC value of 8.60486.
+
+# STEP 6: Everything ok? Check residuals.
+
+plot(x4, col=1) # Residuals look pretty good. Better about the x axis than before.
+qqnorm(x4) # Looks ok.
+
+# STEP 7/8: Step-wise Optimal Fixed Structure
+
+x4_ml <- lme(logBDV ~ Type + Group + Depthf + Core, 
+             random =~1 | LTER_Site, method = "ML", data = bdvmar, 
+             weights = varIdent(form =~1 | Depthf))  # ML model structure.
+x4sub1 <- update(x4_ml, .~. -Type) # Removes near/far from stream classification.
+x4sub2 <- update(x4_ml, .~. -Group) # Removes date.
+x4sub3 <- update(x4_ml, .~. -Depthf) # Removes water depth.
+x4sub4 <- update(x4_ml, .~. -Core) # Removes core section.
+anova(x4_ml, x4sub1, x4sub2, x4sub3, x4sub4) # Compares all models. x4sub1 is preferred with an AIC value of -28.75271. So, remove Type.
+
+x5 <- lme(logBDV ~ Group + Depthf + Core, 
+          random =~1 | LTER_Site, method = "ML", data = bdvmar, 
+          weights = varIdent(form =~1 | Depthf))
+x5sub1 <- update(x5, .~. -Depthf) # Removes water depth.
+x5sub2 <- update(x5, .~. -Group) # Removes date.
+x5sub3 <- update(x5, .~. -Core) # Removes core section.
+anova(x5, x5sub1, x5sub2, x5sub3) # x5 preferred with an AIC value of -28.75271 - keep everything else in.
+
+# STEP 9: Refit with REML
+
+xfinal <- lme(logBDV ~ Group + Depthf + Core, 
+              random =~1 | LTER_Site, method = "REML", data = bdvmar, 
+              weights = varIdent(form =~1 | Depthf)) # Yay!! LAST ONE!!!
+
+# Output of the model.
+summary(xfinal)
+plot(xfinal, col=1) # Checking residuals.
+qqnorm(xfinal) # Looks better than before.
+qqnorm(xfinal, ~ranef (.), col = 1) # Plot of random effect residuals, looks good.
+intervals(xfinal) # Show intervals.
+
+# Final results.
+anova(xfinal) # Output for the paper.
+
+# STEP 10: What does this mean in WORDS?
+
+# I applied a linear mixed effect modelling approach because the data are nested. My model suggests there is a significant effect of date sampled, core section, and water depth on 3,5Bd/V signatures of a given marine sediment sample. Random intercept by sample site was also included as well as a variance term accounting for water depth.
+
+# Equation: 3,5-Bd/V = - 0.34 + 0.10[GroupE] + 0.13[GroupG] + 0.16[GroupJ] - 0.30[Depth20] + 0.06[CoreT] + random + variance
+
+# BONUS : Tukey's HSD Post Hoc
+xHSD_Group <- glht(xfinal, linfct=mcp(Group="Tukey"))
+summary(xHSD_Group) # A&G and A&J significantly different.
+
+xHSD_Depth <- glht(xfinal, linfct=mcp(Depthf="Tukey"))
+summary(xHSD_Depth) # 20m and 10m significantly different.
+
+xHSD_Core <- glht(xfinal, linfct=mcp(Core="Tukey"))
+summary(xHSD_Core) # Top and Bottom significantly different.
+
+```
+
+The final model took the form : log(3,5Bd/V) ~ Group + Depth + Core + 1|LTER_Site + 1|Depth(var)
+
+This translated to a formula of log(3,5-Bd/V) = - 0.34 + 0.10[GroupE] + 0.13[GroupG] + 0.16[GroupJ] - 0.30[Depth20] + 0.06[CoreT] + random + variance.
+
+Post hoc results: Dec15 & Jun16, p = 0.0266; Dec15 & Mar17, p < 0.001; Dec15 & Jun17, p < 0.001; 20m & 10m, p < 0.0001; Top & Bottom, p = 0.0023.
+
 This is the end of the RMarkdown document.

@@ -336,6 +336,30 @@ $(document).ready(function () {
 <p>The final model took the form : Lambda ~ Type + Depth + Core + Group + 1|LTER_Site</p>
 <p>This translated to a formula of Lambda = 0.41 + 0.40[MarineRunoff] + 0.50[20m] - 0.26[Top] + 0.28[GroupE] + 0.25[GroupG] + 0.42[GroupJ] + random.</p>
 <p>Post hoc results: 20M - 10M, p &lt; 0.0001; Top - Bottom, p = 0.0002; December 2015 (A) - June 2017 (J), p &lt; 0.001 (all others NS).</p>
+</div>
+<div id="sv-marine" class="section level2">
+<h2>S/V (marine)</h2>
+<p>The final model took the form : S.V ~ Depth + Group + Core + 1|LTER_Site + 1|Depth(var)</p>
+<p>This translated to a formula of S/V = 3.20 - 0.91[Depthf20] + 0.15[Top] + 0.19[GroupE] + 0.47[GroupG] + 0.24[GroupJ] + random + variance.</p>
+<p>Post hoc results: 20m &amp; 10m, p &lt; 0.0001; Dec 2015 &amp; Mar 2017, p = 0.0079</p>
+</div>
+<div id="cv-marine" class="section level2">
+<h2>C/V (marine)</h2>
+<p>The final model took the form : C.V ~ Group + Depth + 1|LTER_Site</p>
+<p>This translated to a formula of C/V = 0.14 - 0.06[GroupE] - 0.04[GroupG] - 0.02[GroupJ] - 0.02[Depth20] + random.</p>
+<p>Post hoc results: Dec15 &amp; Jun16, p &lt; 0.001 ; Dec15 &amp; Mar17, p = 0.00676; Jun16 &amp; Jun17, p = 0.02117; 20 m &amp; 10 m, p = 0.0384.</p>
+</div>
+<div id="pvs-marine" class="section level2">
+<h2>P/V+S (marine)</h2>
+<p>The final model took the form : log(P/V+S) ~ Type + Group + Depth + Core + 1|LTER_Site + 1|Depth(var)</p>
+<p>This translated to a formula of log(P/V+S) = - 0.48 - 0.14[MarineRunoff] - 0.07[GroupE] - 0.15[GroupG] - 0.45[GroupJ] - 0.22[Depth20] + 0.08[Top] + random + variance.</p>
+<p>Post hoc results: Marine &amp; MarineRunoff, p = 0.0149 ; Top &amp; Bottom, p = 0.000951; Dec15 &amp; Mar17, p &lt; 0.001; Dec15 &amp; Jun17, p &lt; 0.001; Jun16 &amp; Jun17, p &lt; 0.001; Mar17 &amp; Jun17, p &lt; 0.001; 20m &amp; 10m, p &lt; 0.0001.</p>
+</div>
+<div id="bdv-marine" class="section level2">
+<h2>3,5Bd/V (marine)</h2>
+<p>The final model took the form : log(3,5Bd/V) ~ Group + Depth + Core + 1|LTER_Site + 1|Depth(var)</p>
+<p>This translated to a formula of log(3,5-Bd/V) = - 0.34 + 0.10[GroupE] + 0.13[GroupG] + 0.16[GroupJ] - 0.30[Depth20] + 0.06[CoreT] + random + variance.</p>
+<p>Post hoc results: Dec15 &amp; Jun16, p = 0.0266; Dec15 &amp; Mar17, p &lt; 0.001; Dec15 &amp; Jun17, p &lt; 0.001; 20m &amp; 10m, p &lt; 0.0001; Top &amp; Bottom, p = 0.0023.</p>
 <p>This is the end of the RMarkdown document.</p>
 </div>
 </div>
