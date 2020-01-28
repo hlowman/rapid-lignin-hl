@@ -140,4 +140,61 @@ fig5
 
 ```
 
+# Figure 6
+
+```{r Fig6, echo=FALSE}
+
+# So, this will be a plot of stream S/V and C/V values, but the boxes for source material will need to be added in in Powerpoint.
+
+stream <- mastered %>%
+  filter(Environment=="Stream") # Creates dataset of only stream data.
+
+#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig6.tiff", width=8, height=6, unit="in", res=400) 
+fig6 <- ggplot(stream, aes (C.V,S.V, shape=Group_2, fill=Group_2)) +
+  geom_point(size=6,
+             stroke = 0.75,
+             alpha = 0.8) +
+  scale_shape_manual(values = c(21, 21, 21), labels = c("01/2016", "03/2016", "01/2017")) +
+  scale_fill_manual(values = c("white", "lightgrey", "black"), labels = c("01/2016", "03/2016", "01/2017")) + # Need to duplicate labels in both calls so that legend works.
+  xlim(0,0.6) +
+  ylim(0,4.5) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
+  theme(text=element_text(family="Times New Roman", size=16)) +
+  xlab("Cinnamyl/Vanillyl") +
+  ylab("Syringyl/Vanillyl") +
+  theme(legend.title = element_blank())
+#dev.off
+
+fig6
+
+```
+
+## Figure 8
+
+```{r Fig8, echo=FALSE}
+
+# Similar to Figure 6, this figure will plot degradation parameters for stream data only.
+
+#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig8.tiff", width=8, height=6, unit="in", res=400) 
+fig8 <- ggplot(stream, aes (Bd.V,P..V.S., shape=Group_2, fill=Group_2)) +
+  geom_point(size=6,
+             stroke = 0.75,
+             alpha = 0.8) +
+  scale_shape_manual(values = c(21, 21, 21), labels = c("01/2016", "03/2016", "01/2017")) +
+  scale_fill_manual(values = c("white", "lightgrey", "black"), labels = c("01/2016", "03/2016", "01/2017")) +
+  xlim(0,0.4) +
+  ylim(0,0.4) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
+  theme(text=element_text(family="Times New Roman", size=16)) +
+  xlab("3,5-Bd / Vanillyl") +
+  ylab("P-hydroxyl / (Vanillyl + Syringyl)") +
+  theme(legend.title = element_blank())
+#dev.off
+
+fig8
+
+```
+
 End of RMarkdown file.
