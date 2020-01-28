@@ -174,6 +174,58 @@ fig6
 
 ```{r Fig7, echo=FALSE}
 
+# And now to create a similar S/V vs. C/V figure for the marine sample data.
+
+marine <- mastered %>%
+  filter(Environment=="Reef") # Creates dataset of only marine data.
+
+fig7a <- ggplot(marine, aes (C.V,S.V, shape=Group, fill=Group)) +
+  geom_point(size=6,
+             stroke = 0.75,
+             alpha = 0.8) +
+  scale_shape_manual(values = c(21, 21, 21, 21), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) +
+  scale_fill_manual(values = c("white", "lightgrey", "gray30", "black"), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) + # Need to duplicate labels in both calls so that legend works.
+  xlim(0,0.25) +
+  ylim(0,5.5) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
+  theme(text=element_text(family="Times New Roman", size=16)) +
+  xlab("Cinnamyl/Vanillyl") +
+  ylab("Syringyl/Vanillyl") +
+  theme(legend.title = element_blank())
+
+fig7a
+
+# Due to sheer number of points, let's consolidate by site for each sampling.
+
+m_cvsv <- marine %>% 
+  group_by(Site, Group) %>%     
+  summarize(meanC.V = mean(C.V, na.rm = TRUE), CVsd = sd(C.V, na.rm = TRUE), meanS.V = mean(S.V, na.rm = TRUE), SVsd = sd(S.V, na.rm = TRUE),) %>%
+  ungroup()
+
+#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig7.tiff", width=8, height=6, unit="in", res=400) 
+fig7b <- ggplot(m_cvsv, aes (x=meanC.V, y=meanS.V, shape = Group, fill = Group)) +
+  geom_point(size=6,
+             stroke = 0.75,
+             alpha = 0.8) +
+  scale_shape_manual(values = c(21, 21, 21, 21), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) +
+  scale_fill_manual(values = c("white", "lightgrey", "gray30", "black"), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) +
+  #geom_errorbar(data=m_cvsv, aes(ymin=meanS.V-SVsd,ymax=meanS.V+SVsd)) +
+  #geom_errorbarh(data=m_cvsv, aes(xmin=meanC.V-CVsd,xmax=meanC.V+CVsd)) +
+  xlim(0,0.25) +
+  ylim(0,5.5) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
+  theme(text=element_text(family="Times New Roman", size=16)) +
+  xlab("Cinnamyl/Vanillyl") +
+  ylab("Syringyl/Vanillyl") +
+  theme(legend.title = element_blank())
+#dev.off
+
+# Did not include error bars because they do not add to the takeaway of the figure, and delineations between groupings are made clear by the results of the LMEMs.
+
+fig7b
+
 ```
 
 
@@ -201,6 +253,57 @@ fig8 <- ggplot(stream, aes (Bd.V,P..V.S., shape=Group_2, fill=Group_2)) +
 #dev.off
 
 fig8
+
+```
+
+## Figure 9
+
+```{r Fig9, echo=FALSE}
+
+# And finally, the code for the P/V+S vs. 3,5-Bd/V values for marine sites.
+
+fig9a <- ggplot(marine, aes (Bd.V,P..V.S., shape=Group, fill=Group)) +
+  geom_point(size=6,
+             stroke = 0.75,
+             alpha = 0.8) +
+  scale_shape_manual(values = c(21, 21, 21, 21), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) +
+  scale_fill_manual(values = c("white", "lightgrey", "gray30", "black"), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) +
+  xlim(0,2) +
+  ylim(0,1) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
+  theme(text=element_text(family="Times New Roman", size=16)) +
+  xlab("3,5Bd / Vanillyl") +
+  ylab("P-hydroxyl / (Vanillyl + Syringyl)") +
+  theme(legend.title = element_blank())
+
+fig9a
+
+# Going to aggregate values again as we did in Figure 7.
+
+m_bdvpvs <- marine %>% 
+  group_by(Site, Group) %>%     
+  summarize(meanBdV = mean(Bd.V, na.rm = TRUE), BdVsd = sd(Bd.V, na.rm = TRUE), meanPVS = mean(P..V.S., na.rm = TRUE), PVSsd = sd(P..V.S., na.rm = TRUE),) %>%
+  ungroup()
+
+#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig9.tiff", width=8, height=6, unit="in", res=400) 
+fig9b <- ggplot(m_bdvpvs, aes (x=meanBdV, y=meanPVS, shape = Group, fill = Group)) +
+  geom_point(size=6,
+             stroke = 0.75,
+             alpha = 0.8) +
+  scale_shape_manual(values = c(21, 21, 21, 21), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) +
+  scale_fill_manual(values = c("white", "lightgrey", "gray30", "black"), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) +
+  xlim(0,2) +
+  ylim(0,1) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
+  theme(text=element_text(family="Times New Roman", size=16)) +
+  xlab("3,5Bd / Vanillyl") +
+  ylab("P-hydroxyl / (Vanillyl + Syringyl)") +
+  theme(legend.title = element_blank())
+#dev.off
+
+fig9b
 
 ```
 
