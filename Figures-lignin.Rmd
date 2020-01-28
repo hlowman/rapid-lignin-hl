@@ -59,7 +59,7 @@ fig3a <- ggplot(Fig3_Stats, aes(Group, Sig8, shape=Environment, fill=Environment
   xlab("Sample Date") +
   ylab("Sigma 8 (mg/10 g sample)") + 
   theme_bw() +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) + # This ensures the whole data grid is boxed in, which looks cleaner in text.
   theme(text=element_text(family="Times New Roman", size=14)) +
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   theme(axis.title.x=element_blank()) +
@@ -90,3 +90,54 @@ fig3b
 
 ```
 
+### Figure 4 & 5
+
+```{r Fig4/5, echo=FALSE}
+
+# Next, we will plot isotopic data versus Sigma 8 and 3,5-Bd/V values.
+
+# I will remove one egregious outlier - this was not removed during the LMEMs since those models dealt with lignin phenol values only (and had no isotopes as fixed or random effects).
+
+mastered$Environment <- factor(mastered$Environment, levels = c( "Stream", "Estuary", "Reef")) # Relevels.
+
+masterer <- mastered[-181,] # Removes the crazy high outlier for d13C.
+
+# I have also removed the designation of near/far from stream and just represented all marine sediments as reef sites - this distinction was not important in any of the models I ran, and I feel it doesn't add anything to the visual. Also, this will keep things consistent legend-wise with Figure 3.
+
+#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig4.tiff", width=10, height=6, unit="in", res=400) 
+fig4 <- ggplot(masterer, aes (x=d13C, y=Sigma8, shape=Environment, fill=Environment)) +
+  geom_point(size=3,
+             stroke = 0.75,
+             alpha = 0.8) +
+  scale_shape_manual(values = c(21, 24, 22)) +
+  scale_fill_manual(values = c("white", "lightgrey", "black")) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
+  theme(text=element_text(family="Times New Roman", size=16)) +
+  xlab(expression("δ"^{13}*"C (‰)")) + # GAH! It's AMAZING I GOT THE SUPERSCRIPT TO WORK!!!
+  ylab("Sigma 8 (mg/10 g sample)") +
+  theme(legend.title = element_blank())
+#dev.off
+
+fig4
+
+#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig5.tiff", width=10, height=6, unit="in", res=400) 
+fig5 <- ggplot(masterer, aes (x=d13C, y=Bd.V, shape=Environment, fill=Environment)) +
+  geom_point(size=3,
+             stroke = 0.75,
+             alpha = 0.8) +
+  scale_shape_manual(values = c(21, 24, 22)) +
+  scale_fill_manual(values = c("white", "lightgrey", "black")) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
+  theme(text=element_text(family="Times New Roman", size=16)) +
+  xlab(expression("δ"^{13}*"C (‰)")) +
+  ylab("3,5-Bd / Vanillyl") +
+  theme(legend.title = element_blank())
+#dev.off
+
+fig5
+
+```
+
+End of RMarkdown file.
