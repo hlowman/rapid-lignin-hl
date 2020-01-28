@@ -170,6 +170,13 @@ fig6
 
 ```
 
+## Figure 7
+
+```{r Fig7, echo=FALSE}
+
+```
+
+
 ## Figure 8
 
 ```{r Fig8, echo=FALSE}
