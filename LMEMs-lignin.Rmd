@@ -94,6 +94,13 @@ master$Pnum <- as.numeric(master$P) # Makes the p-phenol column a series of numb
 
 mastered <- master[ -c(56, 66, 164, 238, 300, 387, 389), ] # Starts with the original dataset and then removes desired rows.
 
+# Quick calculation for manuscript:
+
+OCmeans <- mastered %>%
+  group_by(Environment) %>%
+  summarize(meanOC = mean(perc_OrgC, na.rm = TRUE), sdOC = sd(perc_OrgC, na.rm = TRUE)) %>% # Calculates summaries ...
+  ungroup()
+
 ```
 
 These models will be organized in this file as they are listed in Appendix 4 of the manuscript.
