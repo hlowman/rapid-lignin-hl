@@ -104,7 +104,7 @@ mastered$Environment <- factor(mastered$Environment, levels = c( "Stream", "Estu
 
 # I have also removed the designation of near/far from stream and just represented all marine sediments as reef sites - this distinction was not important in any of the models I ran, and I feel it doesn't add anything to the visual. Also, this will keep things consistent legend-wise with Figure 3.
 
-#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig4.tiff", width=10, height=6, unit="in", res=400) 
+#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig4.tiff", width=12, height=6, unit="in", res=400) 
 fig4 <- ggplot(mastered, aes (x=d13C, y=Sigma8, shape=Environment, fill=Environment)) +
   geom_point(size=3,
              stroke = 0.75,
