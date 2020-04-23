@@ -68,6 +68,25 @@ fig3a <- ggplot(Fig3_Stats, aes(Group, Sig8, shape=Environment, fill=Environment
 
 fig3a
 
+# Creating the following figure for inclusion in my exit seminar.
+
+fig3a_color <- ggplot(Fig3_Stats, aes(Group, Sig8, color=Environment)) +
+  scale_x_discrete(labels = c("12/2015", "01/2016", "03/2016", "04/2016", "06/2016", "06/2016", "01/2017", "03/2017", "03/2017", "06/2017", "06/2017")) +
+  geom_point(size = 6,
+             stroke = 0.75) + 
+  scale_color_manual(values=c("#E29244", "#4CA49E", "#59A3F8"), name = "Sampling Environment") + # Edit the legend and figure colors.
+  geom_errorbar(data=Fig3_Stats, aes(ymin=Sig8-Sig8sd,ymax=Sig8+Sig8sd), width=0.1) +
+  xlab("Sample Date") +
+  ylab("Sigma 8 (mg/10 g sample)") + 
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) + # This ensures the whole data grid is boxed in, which looks cleaner in text.
+  theme(text=element_text(family="Arial", size=22)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  theme(legend.title = element_blank())
+
+fig3a_color
+# Actually, I'm not sure how much more helpful a figure versus numbers will be so I'm skipping this figure in my presentation.
+
 #tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig3B.tiff", width=6, height=4, unit="in", res=400) 
 fig3b <- ggplot(Fig3_Stats, aes(Group, Lam, shape=Environment, fill=Environment)) +
   scale_x_discrete(labels = c("12/2015", "01/2016", "03/2016", "04/2016", "06/2016", "06/2016", "01/2017", "03/2017", "03/2017", "06/2017", "06/2017")) +
@@ -168,6 +187,67 @@ fig6 <- ggplot(stream, aes (C.V,S.V, shape=Group_2, fill=Group_2)) +
 
 fig6
 
+#Making a set of new figures for my exit seminar.
+
+streama <- mastered %>%
+  filter(Environment=="Stream") %>% # Creates dataset of only stream data.
+  filter(Group=="B") # Selects only January 2016 data.
+
+fig6_colora <- ggplot(streama, aes (C.V,S.V, color=Group_2)) +
+  geom_point(size=8,
+             stroke = 0.75) +
+  scale_color_manual(values = c("#E29244"), labels = c("01/2016")) + 
+  xlim(0,0.6) +
+  ylim(0,4.5) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
+  theme(text=element_text(family="Arial", size=22)) +
+  xlab("Cinnamyl / Vanillyl") +
+  ylab("Syringyl / Vanillyl") +
+  theme(legend.title = element_blank())
+
+#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig6_colora.tiff", width=8, height=6, unit="in", res=400) 
+fig6_colora
+#dev.off
+
+streamb <- mastered %>%
+  filter(Environment=="Stream") %>% # Creates dataset of only stream data.
+  filter(Group=="B" | Group=="C") # Selects only 2016 data.
+
+fig6_colorb <- ggplot(streamb, aes (C.V,S.V, color=Group_2)) +
+  geom_point(size=8,
+             stroke = 0.75) +
+  scale_color_manual(values = c("#E29244","#FFAA00"), labels = c("01/2016", "03/2016")) + 
+  xlim(0,0.6) +
+  ylim(0,4.5) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
+  theme(text=element_text(family="Arial", size=22)) +
+  xlab("Cinnamyl / Vanillyl") +
+  ylab("Syringyl / Vanillyl") +
+  theme(legend.title = element_blank())
+
+#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig6_colorb.tiff", width=8, height=6, unit="in", res=400) 
+fig6_colorb
+#dev.off
+
+fig6_colorc <- ggplot(stream, aes (C.V,S.V, color=Group_2)) +
+  geom_point(size=8,
+             stroke = 0.75) +
+  scale_color_manual(values = c("#E29244", "#FFAA00", "#D46F10"), labels = c("01/2016", "03/2016", "01/2017")) +
+  xlim(0,0.6) +
+  ylim(0,4.5) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
+  theme(text=element_text(family="Arial", size=22)) +
+  xlab("Cinnamyl / Vanillyl") +
+  ylab("Syringyl / Vanillyl") +
+  theme(legend.title = element_blank())
+
+#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig6_colorc.tiff", width=8, height=6, unit="in", res=400) 
+fig6_colorc
+#dev.off
+
 ```
 
 ## Figure 7
@@ -225,6 +305,85 @@ fig7b <- ggplot(m_cvsv, aes (x=meanC.V, y=meanS.V, shape = Group, fill = Group))
 # Did not include error bars because they do not add to the takeaway of the figure, and delineations between groupings are made clear by the results of the LMEMs.
 
 fig7b
+
+# And below I've made some additional colored plots for use in my exit seminar.
+
+m_cvsva <- m_cvsv %>% # Takes the original aggregated dataset.
+  filter(Group == "A") # Selects only December 2015 samples.
+
+fig7b_colora <- ggplot(m_cvsva, aes (x=meanC.V, y=meanS.V, color = Group)) +
+  geom_point(size=8,
+             stroke = 0.75) +
+  scale_color_manual(values = c("#69B9FA"), labels = c("12/2015")) +
+  xlim(0,0.25) +
+  ylim(0,5.5) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
+  theme(text=element_text(family="Arial", size=22)) +
+  xlab("Cinnamyl / Vanillyl") +
+  ylab("Syringyl / Vanillyl") +
+  theme(legend.title = element_blank())
+
+#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig7b_colora.tiff", width=8, height=6, unit="in", res=400) 
+fig7b_colora
+#dev.off
+
+m_cvsvb <- m_cvsv %>% # Takes the original aggregated dataset.
+  filter(Group == "A" | Group == "E") # Selects only December 2015 and June 2016 samples.
+
+fig7b_colorb <- ggplot(m_cvsvb, aes (x=meanC.V, y=meanS.V, color = Group)) +
+  geom_point(size=8,
+             stroke = 0.75) +
+  scale_color_manual(values = c("#69B9FA", "#59A3F8"), labels = c("12/2015", "06/2016")) +
+  xlim(0,0.25) +
+  ylim(0,5.5) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
+  theme(text=element_text(family="Arial", size=22)) +
+  xlab("Cinnamyl / Vanillyl") +
+  ylab("Syringyl / Vanillyl") +
+  theme(legend.title = element_blank())
+
+#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig7b_colorb.tiff", width=8, height=6, unit="in", res=400) 
+fig7b_colorb
+#dev.off
+
+m_cvsvbb <- m_cvsv %>% # Takes the original aggregated dataset.
+  filter(Group == "A" | Group == "E" | Group == "G") # Selects only December 2015 and June 2016 samples.
+
+fig7b_colorbb <- ggplot(m_cvsvbb, aes (x=meanC.V, y=meanS.V, color = Group)) +
+  geom_point(size=8,
+             stroke = 0.75) +
+  scale_color_manual(values = c("#69B9FA", "#59A3F8", "#5A7ECB"), labels = c("12/2015", "06/2016", "03/2017")) +
+  xlim(0,0.25) +
+  ylim(0,5.5) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
+  theme(text=element_text(family="Arial", size=22)) +
+  xlab("Cinnamyl / Vanillyl") +
+  ylab("Syringyl / Vanillyl") +
+  theme(legend.title = element_blank())
+
+#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig7b_colorbb.tiff", width=8, height=6, unit="in", res=400) 
+fig7b_colorbb
+#dev.off
+
+fig7b_colorc <- ggplot(m_cvsv, aes (x=meanC.V, y=meanS.V, color = Group)) +
+  geom_point(size=8,
+             stroke = 0.75) +
+  scale_color_manual(values = c("#69B9FA", "#59A3F8", "#5A7ECB", "#6B6D9F"), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) +
+  xlim(0,0.25) +
+  ylim(0,5.5) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
+  theme(text=element_text(family="Arial", size=22)) +
+  xlab("Cinnamyl / Vanillyl") +
+  ylab("Syringyl / Vanillyl") +
+  theme(legend.title = element_blank())
+
+#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig7b_colorc.tiff", width=8, height=6, unit="in", res=400) 
+fig7b_colorc
+#dev.off
 
 ```
 
