@@ -196,7 +196,8 @@ streama <- mastered %>%
 fig6_colora <- ggplot(streama, aes (C.V,S.V, color=Group_2)) +
   geom_point(size=8,
              stroke = 0.75) +
-  scale_color_manual(values = c("#E29244"), labels = c("01/2016")) + 
+  scale_color_manual(values = c("#EFC68E"), labels = c("01/2016")) +
+  #scale_color_manual(values = c("#E29244"), labels = c("01/2016")) + 
   xlim(0,0.6) +
   ylim(0,4.5) +
   theme_bw() +
@@ -206,7 +207,7 @@ fig6_colora <- ggplot(streama, aes (C.V,S.V, color=Group_2)) +
   ylab("Syringyl / Vanillyl") +
   theme(legend.title = element_blank())
 
-#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig6_colora.tiff", width=8, height=6, unit="in", res=400) 
+#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig6_colora_oak.tiff", width=8, height=6, unit="in", res=400) 
 fig6_colora
 #dev.off
 
@@ -217,7 +218,8 @@ streamb <- mastered %>%
 fig6_colorb <- ggplot(streamb, aes (C.V,S.V, color=Group_2)) +
   geom_point(size=8,
              stroke = 0.75) +
-  scale_color_manual(values = c("#E29244","#FFAA00"), labels = c("01/2016", "03/2016")) + 
+  scale_color_manual(values = c("#EFC68E", "#7C9867"), labels = c("01/2016", "03/2016")) +
+  #scale_color_manual(values = c("#E29244","#FFAA00"), labels = c("01/2016", "03/2016")) + 
   xlim(0,0.6) +
   ylim(0,4.5) +
   theme_bw() +
@@ -227,14 +229,15 @@ fig6_colorb <- ggplot(streamb, aes (C.V,S.V, color=Group_2)) +
   ylab("Syringyl / Vanillyl") +
   theme(legend.title = element_blank())
 
-#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig6_colorb.tiff", width=8, height=6, unit="in", res=400) 
+#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig6_colorb_oak.tiff", width=8, height=6, unit="in", res=400) 
 fig6_colorb
 #dev.off
 
 fig6_colorc <- ggplot(stream, aes (C.V,S.V, color=Group_2)) +
   geom_point(size=8,
              stroke = 0.75) +
-  scale_color_manual(values = c("#E29244", "#FFAA00", "#D46F10"), labels = c("01/2016", "03/2016", "01/2017")) +
+  scale_color_manual(values = c("#EFC68E", "#7C9867", "#4F5730"), labels = c("01/2016", "03/2016", "01/2017")) +
+  #scale_color_manual(values = c("#E29244", "#FFAA00", "#D46F10"), labels = c("01/2016", "03/2016", "01/2017")) +
   xlim(0,0.6) +
   ylim(0,4.5) +
   theme_bw() +
@@ -244,7 +247,7 @@ fig6_colorc <- ggplot(stream, aes (C.V,S.V, color=Group_2)) +
   ylab("Syringyl / Vanillyl") +
   theme(legend.title = element_blank())
 
-#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig6_colorc.tiff", width=8, height=6, unit="in", res=400) 
+#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig6_colorc_oak.tiff", width=8, height=6, unit="in", res=400) 
 fig6_colorc
 #dev.off
 
@@ -314,7 +317,7 @@ m_cvsva <- m_cvsv %>% # Takes the original aggregated dataset.
 fig7b_colora <- ggplot(m_cvsva, aes (x=meanC.V, y=meanS.V, color = Group)) +
   geom_point(size=8,
              stroke = 0.75) +
-  scale_color_manual(values = c("#69B9FA"), labels = c("12/2015")) +
+  scale_color_manual(values = c("#3793EC"), labels = c("12/2015")) +
   xlim(0,0.25) +
   ylim(0,5.5) +
   theme_bw() +
@@ -324,7 +327,7 @@ fig7b_colora <- ggplot(m_cvsva, aes (x=meanC.V, y=meanS.V, color = Group)) +
   ylab("Syringyl / Vanillyl") +
   theme(legend.title = element_blank())
 
-#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig7b_colora.tiff", width=8, height=6, unit="in", res=400) 
+#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig7b_colora_lake.tiff", width=8, height=6, unit="in", res=400) 
 fig7b_colora
 #dev.off
 
@@ -334,7 +337,7 @@ m_cvsvb <- m_cvsv %>% # Takes the original aggregated dataset.
 fig7b_colorb <- ggplot(m_cvsvb, aes (x=meanC.V, y=meanS.V, color = Group)) +
   geom_point(size=8,
              stroke = 0.75) +
-  scale_color_manual(values = c("#69B9FA", "#59A3F8"), labels = c("12/2015", "06/2016")) +
+  scale_color_manual(values = c("#3793EC", "#7AC9B7"), labels = c("12/2015", "06/2016")) +
   xlim(0,0.25) +
   ylim(0,5.5) +
   theme_bw() +
@@ -344,7 +347,7 @@ fig7b_colorb <- ggplot(m_cvsvb, aes (x=meanC.V, y=meanS.V, color = Group)) +
   ylab("Syringyl / Vanillyl") +
   theme(legend.title = element_blank())
 
-#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig7b_colorb.tiff", width=8, height=6, unit="in", res=400) 
+#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig7b_colorb_lake.tiff", width=8, height=6, unit="in", res=400) 
 fig7b_colorb
 #dev.off
 
@@ -354,7 +357,7 @@ m_cvsvbb <- m_cvsv %>% # Takes the original aggregated dataset.
 fig7b_colorbb <- ggplot(m_cvsvbb, aes (x=meanC.V, y=meanS.V, color = Group)) +
   geom_point(size=8,
              stroke = 0.75) +
-  scale_color_manual(values = c("#69B9FA", "#59A3F8", "#5A7ECB"), labels = c("12/2015", "06/2016", "03/2017")) +
+  scale_color_manual(values = c("#3793EC", "#7AC9B7", "#6CA184"), labels = c("12/2015", "06/2016", "03/2017")) +
   xlim(0,0.25) +
   ylim(0,5.5) +
   theme_bw() +
@@ -364,14 +367,15 @@ fig7b_colorbb <- ggplot(m_cvsvbb, aes (x=meanC.V, y=meanS.V, color = Group)) +
   ylab("Syringyl / Vanillyl") +
   theme(legend.title = element_blank())
 
-#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig7b_colorbb.tiff", width=8, height=6, unit="in", res=400) 
+#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig7b_colorbb_lake.tiff", width=8, height=6, unit="in", res=400) 
 fig7b_colorbb
 #dev.off
 
 fig7b_colorc <- ggplot(m_cvsv, aes (x=meanC.V, y=meanS.V, color = Group)) +
   geom_point(size=8,
              stroke = 0.75) +
-  scale_color_manual(values = c("#69B9FA", "#59A3F8", "#5A7ECB", "#6B6D9F"), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) +
+  scale_color_manual(values = c("#3793EC", "#7AC9B7", "#6CA184", "#2A3927"), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) +
+  #scale_color_manual(values = c("#69B9FA", "#59A3F8", "#5A7ECB", "#6B6D9F"), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) +
   xlim(0,0.25) +
   ylim(0,5.5) +
   theme_bw() +
@@ -381,7 +385,7 @@ fig7b_colorc <- ggplot(m_cvsv, aes (x=meanC.V, y=meanS.V, color = Group)) +
   ylab("Syringyl / Vanillyl") +
   theme(legend.title = element_blank())
 
-#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig7b_colorc.tiff", width=8, height=6, unit="in", res=400) 
+#tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig7b_colorc_lake.tiff", width=8, height=6, unit="in", res=400) 
 fig7b_colorc
 #dev.off
 
