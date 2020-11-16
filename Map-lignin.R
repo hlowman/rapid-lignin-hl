@@ -22,6 +22,9 @@ map_df <- map_data[1:18,1:5] %>% # Removing odd rows/columns of NAs.
   mutate(lon = Lon) %>%
   mutate(lat = Lat) %>%
   mutate(env_f = factor(Environment, levels = c("Stream", "Estuary", "Marine near Stream", "Marine far from Stream"))) %>%
+  mutate(site_f = factor(LTER_code, levels = c("GV01", "HO00", "AHND", "AQUE", "RG01", "REFU", "BC02", "IVEE", "TE03", "SP02", "GOSL", "GOLB", "ATMY", "ABURE", "AB00", "ABUR", "MC00", "MICR"))) %>%
+  mutate(n_x = c(0.00,-0.01,0.015,-0.01,0.0,-0.01,0.015,0.0,0.0,-0.03,-0.035,-0.02,0.01,0.00,0.0,0.01,0.01,-0.01)) %>%
+  mutate(n_y = c(0.02,0.02,0.02,0.02,0.02,0.02,0.015,0.02,0.02,0.0,0.0,-0.02,-0.02,-0.02,-0.02,-0.02,-0.015,-0.02)) %>%
   mutate(fill_color = ifelse(env_f == "Marine near Stream", 2, 1))
 
 # Create data sf object
@@ -63,16 +66,33 @@ fullmap <- ggmap(sb_basemap) + # base google maps tile
   geom_text_repel(data = map_sf, 
                      aes(x = lon, 
                          y = lat, 
-                         label = LTER_code),
-                  nudge_x = 0.01,
-                  nudge_y = 0.01) +
+                         label = site_f),
+                  nudge_x = map_sf$n_x,
+                  nudge_y = map_sf$n_y,
+                  segment.size = 0.2,
+                  size = 5) +
   ggspatial::annotation_north_arrow(location = "tr") + # adds compass due north
   ggspatial::annotation_scale() + # adds scale
+  geom_text(x = -120, y = 34.40504, label = "Santa Barbara Channel", color = "gray40", size = 4, fontface = "italic") +
+  geom_text(x = -119.95, y = 34.5, label = "Santa Ynez Mountains", color = "gray10", size = 4, fontface = "italic") +
   labs(x = "Longitude (WGS84)",
-       y = "Latitude") +
+       y = "Latitude",
+       shape = "Environment",
+       fill = "Environment") +
   theme_bw() +
-  theme(legend.position = "bottom") +
+  theme(legend.position = c(0.1,0.25),
+        legend.background = element_rect(fill = "white", size = 0.5, linetype = "solid")) +
   coord_sf(crs = st_crs(4326))
 
 fullmap
 
+# Export map to desktop.
+
+# ggsave(("Figure_1.png"),
+#        path = "/Users/heililowman/Desktop/R_figures/Lignin",
+#        width = 30,
+#        height = 15,
+#        units = "cm"
+#        )
+
+# End of R script.
