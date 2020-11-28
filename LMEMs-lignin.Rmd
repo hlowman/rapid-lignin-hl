@@ -120,22 +120,24 @@ These models will be organized in this file as they are listed in Appendix Figur
 
 boxplot(Sigma8 ~ Group_3f, data = mained) # Boxplot by region. In past iterations, this was determined not to be a significant factor, but I am going to keep it in the workflow as a potential fixed effect for now.
 boxplot(Sigma8 ~ Environment, data = mained) # Boxplot by environment. Fixed effect.
-boxplot(Sigma8 ~ LTER_Site, data = mained) # Boxplot by site. Random effect.
-boxplot(Sigma8 ~ Group, data = mained) # Boxplot by sampling date. Group lumps everything sampled on a single date together - the HUGE problem with this sampling design is that the sampling dates are SUPER closely correlated with Environment. Random effect (since there may be an effect across time, but one that may be indistiguishable from Environment).
+boxplot(Sigma8 ~ LTER_Site, data = mained) # Boxplot by site. Random effect - 11/28/2020, adding layers of water depth, replicates, and core section, which are not applicable to stream sites but are to estuarine/marine and must be considered.
+boxplot(Sigma8 ~ Group, data = mained) # Boxplot by sampling date. Group lumps everything sampled on a single date together - the problem with this sampling design is that the sampling dates are SUPER closely correlated with Environment, but there are not consistent time blocks you can instead use to assign to each group of samples.
 
 # New dataset.
 
 sig <- mained %>%
-  dplyr::select(Group_3f, Environment, LTER_Site, Group, Sigma8) %>%
-  na.omit # remove NAs and create new dataset.
+  dplyr::select(Group_3f, Environment, LTER_Site, Depthf, Replicate, Core, Group, Sigma8) %>%
+  filter(!is.na(Sigma8)) %>%
+  replace_na(list(Depthf = 10, Replicate = 1, Core = "T")) 
+  # remove NAs and create new dataset.
 
-pairs(sig) # Pairs plot.
+ggpairs(sig) # Pairs plot.
 
 sig$Environment <- factor(sig$Environment, levels = c("Stream", "Estuary", "Reef")) # Relevels for simpler labeling later.
 
 #### STEP 1: Create a linear regression and check residuals.
 
-# Reasoning for log-transforming Sigma values: per Chapter 19 of Zuur et al. 2009, I'm going to log transform the Sigma data because otherwise (using different variance structures) you are giving up lots of degrees of freedom and make GLS estimation unstable. And I KNOW homogeneity is an issue based on past attempts and the sheer spread of values. I know that this changes the values, but this will give me more flexibility in exploring explanatory variables, which I think is more important that the values themselves.
+# Reasoning for log-transforming Sigma values: per Chapter 19 of Zuur et al. 2009, I'm going to log transform the Sigma data because otherwise (using different variance structures) you are giving up lots of degrees of freedom and make GLS estimation unstable. And I KNOW homogeneity is an issue based on past attempts and the sheer spread of values. I know that this changes the values, but this will give me more flexibility in exploring explanatory variables, which I think is more important that the values themselves. I've applied a similar reasoning to the P/V+S and 3,5Bd/V models below as well.
 
 sig$logSigma8 <- log10(sig$Sigma8) # Log transform data to make heterogeneity of residuals a non-issue (hopefully).
 
@@ -148,21 +150,26 @@ par(op) # Looking better! And I've deemed the negative values to be A-OK since i
 # Response variables - logSigma8
 # Explanatory (fixed) variables - Group_3f, Environment
 
-a1 <- lm(logSigma8 ~ Group_3f + Environment, data = sig) # Creates the initial linear model with both fixed variables.
-ra1 <- rstandard(a1) # Assigns standardized residuals to eeee.
-plot(ra1 ~ sig$LTER_Site, xlab = "Site",
-     ylab = "Standardised residuals") # Plots said residuals.
-abline(0,0) # Since some boxplots are totally above/below zero, there is within-site correlation, so it WILL be used as a random effect as part of the random intercept model structure.
+a1 <- lm(logSigma8 ~ Environment + Group_3f, data = sig) # Creates the initial linear model with both fixed variables.
+ra1 <- rstandard(a1) # Assigns standardized residuals to ra1.
+sig <- sig %>%
+  mutate(ra1 = ra1)
 
-plot(ra1 ~ sig$Group, xlab = "Date",
-     ylab = "Standardised residuals") # Plots said residuals.
-abline(0,0) # Group looks less important so removing sampling date as a random effect.
+ggplot(data = sig, aes(x = Environment, y = ra1)) +
+  geom_boxplot() + 
+  geom_point() +
+  labs(x = "Ecosystem", y = "Standardised residuals") # Plots said residuals.
+
+ggplot(data = sig, aes(x = Group, y = ra1)) +
+  geom_boxplot() + 
+  geom_point() +
+  labs(x = "Date", y = "Standardised residuals")
 
 #### STEP 2: Fit the lm() with GLS and compare to lme().
 
 a2 <- gls(logSigma8 ~ Group_3f + Environment, data = sig) # This is effectively a linear regression since it has no additional calls.
-a3 <- lme(logSigma8 ~ Group_3f + Environment, random =~1 | LTER_Site, data = sig) # Creates the first LMEM with nested random term.
-anova(a2, a3) # Compares the two models. a3 preferred with AIC value of 741.60.
+a3 <- lme(logSigma8 ~ Group_3f + Environment, random =~1 | LTER_Site/Depthf/Replicate/Core, data = sig) # Creates the first LMEM with nested random term. I've subbed in dummy values for Depthf, Replicate, and Core for stream/estuarine sites that might not otherwise have all these.
+anova(a2, a3) # Compares the two models. a3 preferred with AIC value of 486.318.
 
 # STEP 3: Decide on a variance structure (aka random terms).
 
@@ -173,40 +180,44 @@ qqnorm(a3) # This actually looks pretty good - so I'm going to skip the added va
 
 # STEP 4: Fit the lme().
 
-# Using a3 <- lme(logSigma8 ~ Group_3f + Environment, random =~1 | LTER_Site, data = sig)
+# Using a3 <- lme(logSigma8 ~ Group_3f + Environment, random =~1 | LTER_Site/Depthf/Replicate/Core, data = sig)
 
 # STEP 5: Compare the lm() and lme().
 
-anova(a2, a3) # 3 definitely outperforms 2.
+# See Step 2.
 
 # STEP 6: Everything ok? Check residuals.
 
-# See results of Step 3.
+# See Step 3.
 
 # STEP 7/8: Step-wise Optimal Fixed Structure
 
 a3_ml <- lme(logSigma8 ~ Group_3f + Environment, 
-             random =~1 | LTER_Site, method = "ML", data = sig) # Switch over to ML for fixed component editing portion.
+      random =~1 | LTER_Site/Depthf/Replicate/Core,
+      method = "ML", data = sig) # Switch over to ML for fixed component editing portion.
 
 a4 <- lme(logSigma8 ~ Environment, 
-          random =~1 | LTER_Site, method = "ML", data = sig) # Remove Region as a fixed factor.
+      random =~1 | LTER_Site/Depthf/Replicate/Core,
+      method = "ML", data = sig) # Remove Region as a fixed factor.
 
 a5 <- lme(logSigma8 ~ Group_3f, 
-          random =~1 | LTER_Site, method = "ML", data = sig) # Remove Environment as a fixed factor.
+      random =~1 | LTER_Site/Depthf/Replicate/Core,
+      method = "ML", data = sig) # Remove Environment as a fixed factor.
 
-anova(a3_ml, a4, a5) # Compare the three models. a4 preferred with AIC value of 725.70, so remove Region.
+anova(a3_ml, a4, a5) # Compare the three models. a4 preferred with AIC value of474.7521, so remove Region.
 
 a4full <- lme(logSigma8 ~ Environment, 
-              random =~1 | LTER_Site, method = "ML", data = sig)
+      random =~1 | LTER_Site/Depthf/Replicate/Core,
+      method = "ML", data = sig)
 
 a4sub1 <- update(a4full, .~. -Environment) # Removes only term.
 
-anova(a4full, a4sub1) # a4full preferred with AIC value of 725.70, so a4full is the final full model!!!
+anova(a4full, a4sub1) # a4full preferred with AIC value of 474.7521, so a4full is the final full model!!!
 
 # STEP 9: Refit with REML
 
 afinal <- lme(logSigma8 ~ Environment, 
-              random =~1 | LTER_Site, method = "REML", data = sig) # YIPEE!!!
+              random =~1 | LTER_Site/Depthf/Replicate/Core, method = "REML", data = sig) # YIPEE!!!
 
 # Output of the model.
 summary(afinal)
@@ -214,24 +225,20 @@ summary(afinal)
 # Checking residuals.
 plot(afinal, col=1) # Not perfect, but no pattern.
 qqnorm(afinal) # This makes me feel pretty good.
-qqnorm(afinal, ~ranef (.), col = 1) # I'll take it given that we've already log-transformed the data.
-
-# Show intervals.
-intervals(afinal)
 
 # Final results.
 anova(afinal)
 
 # STEP 10: What does this mean in WORDS?
 
-# I applied a linear mixed effect modelling approach because the data are nested with multiple samples (4+) taken from each site (18) on multiple occasions (2+). My model suggests there is a significant effect of ecosystem/environment type (stream, estuarine, marine) on Sigma 8 concentrations of a given sediment sample. Group (date sampled) and fGroup_3 (region sampled) were not included in the model due to variable selection using AIC values. Random intercepts by site were added.
+# I applied a linear mixed effect modelling approach because the data are nested with multiple samples (4+) taken from each site (18) on multiple occasions (2+). My model suggests there is a significant effect of ecosystem/environment type (stream, estuarine, marine) on Sigma 8 concentrations of a given sediment sample. Group (date sampled) and fGroup_3 (region sampled) were not included in the model due to variable selection using AIC values. Random intercepts by site/depth/replicate/core were added.
 
-# Equation: log(Sigma 8) = 0.66 - 0.67[Estuary] - 1.25[Reef] + random[Site]
+# Equation: log(Sigma 8) = 0.65 - 0.69[Estuary] - 1.25[Reef] + random
 
 # BONUS POST HOC:
 
 aHSD <- glht(afinal, linfct=mcp(Environment="Tukey")) # Run a Tukey's post hoc analysis on Environment factor.
-summary(aHSD) # All groups significantly different from one another. Note : Use the results of the first run on this function.
+summary(aHSD) # Stream & Reef significantly different from one another. Note : Use the results of the first run on this function.
 
 # Quick stats calculation of Sigma8 values by environment for the manuscript:
 
@@ -242,11 +249,11 @@ sigmeans <- sig %>%
 
 ```
 
-The final model took the form : logSigma8 ~ Environment + 1|LTER_Site.
+The final model took the form : logSigma8 ~ Environment + 1|LTER_Site/Depth/Replicate/Core.
 
-This translates to a formula of log(Sigma8) = 0.66 - 0.67(Estuary) - 1.25(Reef).
+This translates to a formula of log(Sigma 8) = 0.65 - 0.69[Estuary] - 1.25[Reef] + random.
 
-Post hoc results: Stream - Estuary, p = 0.0020; Estuary - Reef, p = 0.0016; Stream - Reef, p < 0.001
+Post hoc results: Stream - Reef, p < 0.001
 
 ## Lambda
 
@@ -259,11 +266,12 @@ boxplot(Lambda ~ Environment, data = mained) # Boxplot by environment. Fixed eff
 boxplot(Lambda ~ LTER_Site, data = mained) # Boxplot by sampling site. Random effect.
 boxplot(Lambda ~ Group, data = mained) # Boxplot by sampling site. Random effect.
 
-# So, based on boxplots and Sigma model, I move forward with Group_3f (region) and Environment as fixed variables and Group (date sampled) and Site as random NESTED variables.
+# So, based on boxplots and Sigma model, I move forward with Group_3f (region) and Environment as fixed variables and Site/Depth/Replicate/Core as random NESTED variables.
 
 lambda <- mained %>%
-  dplyr::select(Group_3f, Environment, LTER_Site, Group, Lambda) %>%
-  na.omit # remove NAs and create new dataset.
+  dplyr::select(Group_3f, Environment, LTER_Site, Depthf, Replicate, Core, Group, Lambda) %>%
+  filter(!is.na(Lambda)) %>%
+  replace_na(list(Depthf = 10, Replicate = 1, Core = "T")) # remove NAs and create new dataset.
 
 lambda$Environment <- factor(lambda$Environment, levels = c("Stream", "Estuary", "Reef")) # Puts stream first.
 
@@ -271,7 +279,7 @@ op<- par(mfrow = c(1, 1), mar = c(3, 4, 1, 1))
 dotchart(lambda$Lambda, groups = lambda$LTER_Site) # Lambda versus Site on left from original dataset.
 par(op) # Looking ok, but we're trying to keep outlier removal to a minimum, so moving on...
 
-pairs(lambda) # Quick pairs plot to check correllated variables. Trends look similar to Sigma 8, and I think I'm on the right path with the fixed/random variables I've chosen.
+ggpairs(lambda) # Quick pairs plot to check correllated variables.
 
 #### STEP 1: Create a linear regression and check residuals.
 
@@ -282,42 +290,38 @@ pairs(lambda) # Quick pairs plot to check correllated variables. Trends look sim
 
 b1 <- lm(Lambda ~ Group_3f + Environment, data = lambda) # Creates the initial linear model.
 rb1 <- rstandard(b1) # Assigns standardized residuals to rb1.
-plot(rb1 ~ lambda$LTER_Site, xlab = "Site",
-     ylab = "Standardised residuals") # Plots said residuals.
-abline(0,0) # There looks like there's very little within site correlation, so that will be interesting when it comes time to decide on a random structure.
+lambda <- lambda %>%
+  mutate(rb1 = rb1)
 
-plot(rb1 ~ lambda$Group, xlab = "Date Sampled",
-     ylab = "Standardised residuals") # Plots said residuals.
-abline(0,0) # Took a look at date sampled, and it looks similar to site, so I will move forward with only site as part of the random structure (need to account for repeat sampling in some way still).
+ggplot(data = sig, aes(x = LTER_Site, y = ra1)) +
+  geom_boxplot() + 
+  geom_point() +
+  labs(x = "Site", y = "Standardised residuals") # Plots said residuals.
+
+ggplot(data = sig, aes(x = Group, y = ra1)) +
+  geom_boxplot() + 
+  geom_point() +
+  labs(x = "Date", y = "Standardised residuals")
 
 #### STEP 2: Fit the lm() with GLS and compare to lme().
 
 b2 <- gls(Lambda ~ Group_3f + Environment, data = lambda) # This is effectively a linear regression since it has no additional calls.
 b3 <- lme(Lambda ~ Group_3f + Environment, 
-          random =~1 | LTER_Site, data = lambda) # Creates the first LMEM with random term.
-anova(b2, b3) # Compares the two models. b3 preferred based on AIC value of 1110.23.
+          random =~1 | LTER_Site/Depthf/Replicate/Core, data = lambda) # Creates the first LMEM with random term.
+anova(b2, b3) # Compares the two models. b3 preferred based on AIC value of 1034.102.
 
 # STEP 3: Decide on a variance structure (aka random terms and correlation structure if any).
 
 plot(b3, col=1) # Plots residuals before immediately applying variance transformation.
-
-# Looks like we should add in the varIden() variance structure for the observations in different Ecosystem Types. I am also advocating for this to hopefully address the remaining outlier in this data.
-
-b4 <- lme(Lambda ~ Group_3f + Environment, 
-          random =~1 | LTER_Site, data = lambda, 
-          weights = varIdent(form =~1 | Environment)) # Allowing for different variance by Ecosystem.
-
-anova(b3, b4) # Compares both models. b4 is better based on an AIC value of 1075.53.
-
-plot(b4, col=1) # Residuals looking better.
+qqnorm(b3) # Does not appear it's needed.
 
 # STEP 4: Fit the lme().
 
-# Using b4 <- lme(Lambda ~ Group_3f + Environment, random =~1 | LTER_Site, data = lambda, weights = varIdent(form =~1 | Environment))
+# Using b3 <- lme(Lambda ~ Group_3f + Environment, random =~1 | LTER_Site/Depthf/Replicate/Core, data = lambda)
 
 # STEP 5: Compare the lm() and lme().
 
-anova(b2, b4) # 4 definitely outperforms 2.
+# See Step 2.
 
 # STEP 6: Everything ok? Check residuals.
 
@@ -326,22 +330,18 @@ anova(b2, b4) # 4 definitely outperforms 2.
 # STEP 7/8: Step-wise Optimal Fixed Structure
 
 b4_ml <- lme(Lambda ~ Group_3f + Environment, 
-             random =~1 | LTER_Site, method = "ML", data = lambda, 
-             weights = varIdent(form =~1 | Environment)) # Creates model using ML structure.
+             random =~1 | LTER_Site/Depthf/Replicate/Core, method = "ML", data = lambda) # Creates model using ML structure.
 
 b5 <- lme(Lambda ~ Environment, 
-          random =~1 | LTER_Site, method = "ML", data = lambda, 
-          weights = varIdent(form =~1 | Environment)) # Removes region.
+          random =~1 | LTER_Site/Depthf/Replicate/Core, method = "ML", data = lambda) # Removes region.
 
 b6 <- lme(Lambda ~ Group_3f, 
-          random =~1 | LTER_Site, method = "ML", data = lambda, 
-          weights = varIdent(form =~1 | Environment)) # Removes ecosystem.
+          random =~1 | LTER_Site/Depthf/Replicate/Core, method = "ML", data = lambda) # Removes ecosystem.
 
-anova(b4_ml, b5, b6) # Compares all three models. b5 is preferred with AIC value of 1063.45. So, we take out region.
+anova(b4_ml, b5, b6) # Compares all three models. b5 is preferred with AIC value of 1024.237. So, we take out region.
 
 b5full <- lme(Lambda ~ Environment, 
-              random =~1 | LTER_Site, method = "ML", data = lambda, 
-              weights = varIdent(form =~1 | Environment))
+              random =~1 | LTER_Site/Depthf/Replicate/Core, method = "ML", data = lambda)
 
 b5sub1 <- update(b5full, .~. -Environment) # Removes only term. Just checking...
 
@@ -352,28 +352,25 @@ anova(b5full, b5sub1) # First term needs to be in there.
 # STEP 9: Refit with REML
 
 bfinal <- lme(Lambda ~ Environment, 
-              random =~1 | LTER_Site, method = "REML", data = lambda, 
-              weights = varIdent(form =~1 | Environment))
+              random =~1 | LTER_Site/Depthf/Replicate/Core,
+              method = "REML", data = lambda)
 
 # Output of the model.
 summary(bfinal)
 plot(bfinal, col=1) # Checking residuals.
 qqnorm(bfinal) # A little curvy, but ok.
-qqnorm(bfinal, ~ranef (.), col = 1) # Good enough.
-intervals(bfinal) # Show intervals.
 
 # Final results.
 anova(bfinal)
 
 # STEP 10: What does this mean in WORDS?
 
-# I applied a linear mixed effect modelling approach because the data are nested. My model suggests there is a significant effect of ecosystem type (stream, estuarine, marine) on lambda concentrations of a given sediment sample. fGroup_3 (region sampled) was not included in the model due to variable selection using AIC values. A random intercept by site was added, and variance was treated as varying by Ecosystem Type.
+# I applied a linear mixed effect modelling approach because the data are nested. My model suggests there is a significant effect of ecosystem type (stream, estuarine, marine) on lambda concentrations of a given sediment sample. fGroup_3 (region sampled) was not included in the model due to variable selection using AIC values. A random intercept by site/depth/replicate/core was added.
 
-# Equation: Lambda = 2.13 + 0.03[Estuary] - 1.07[Reef] + random + variance
+# Equation: Lambda = 2.13 + 0.03[Estuary] - 1.07[Reef] + random
 
 # BONUS : Tukey's HSD Post Hoc
 bHSD <- glht(bfinal, linfct=mcp(Environment="Tukey"))
-
 summary(bHSD) # No significant difference between Stream & Estuarine samples.
 
 # Quick stats calculation of Lambda values by environment for the manuscript:
@@ -385,11 +382,11 @@ lammeans <- lambda %>%
 
 ```
 
-The final model took the form : Lambda ~ Environment + 1|LTER_Site + varIdent(Environment)
+The final model took the form : Lambda ~ Environment + 1|LTER_Site/Depthf/Replicate/Core
 
-This translated to a formula of Lambda = 2.13 + 0.03(Estuary) - 1.07(Reef).
+This translated to a formula of Lambda = 2.13 + 0.03[Estuary] - 1.07[Reef] + random.
 
-Post hoc results: Stream - Estuary, p = 0.994 (NS); Estuary - Reef, p < 0.0001; Stream - Reef, p < 0.0001.
+Post hoc results: Stream - Estuary, p = 0.998 (NS); Estuary - Reef, p = 0.0062; Stream - Reef, p < 0.001.
 
 ## S/V
 
@@ -397,16 +394,18 @@ Post hoc results: Stream - Estuary, p = 0.994 (NS); Estuary - Reef, p < 0.0001; 
 
 ### Data Exploration
 
-boxplot(S.V ~ Group_3f, data = mained) # Boxplot by region. Fixed effect.
-boxplot(S.V ~ Environment, data = mained) # Boxplot by environment. Fixed effect.
-boxplot(S.V ~ LTER_Site, data = mained) # Boxplot by site. Random effect.
-boxplot(S.V ~ Group, data = mained) # Boxplot by date. Random effect.
+boxplot(S/V ~ Group_3f, data = mained) # Boxplot by region. Fixed effect.
+boxplot(S/V ~ Environment, data = mained) # Boxplot by environment. Fixed effect.
+boxplot(S/V ~ LTER_Site, data = mained) # Boxplot by site. Random effect.
+boxplot(S/V ~ Group, data = mained) # Boxplot by date. Random effect.
 
-# So, based on boxplots and Sigma model, I move forward with Group_3f (region) and Environment as fixed variables and Group (date sampled) and Site as random NESTED variables.
+# So, based on boxplots and Sigma model, I move forward with Group_3f (region) and Environment as fixed variables and Site/Depth/Replicate/Core as random NESTED variables.
 
 sv <- mained %>%
-  dplyr::select(Group_3f, Environment, LTER_Site, Group, S.V) %>%
-  na.omit # remove NAs and create new dataset.
+  dplyr::select(Group_3f, Environment, LTER_Site, Depthf, Replicate, Core, Group, `S/V`) %>%
+  filter(!is.na(`S/V`)) %>%
+  mutate(SV = `S/V`) %>%
+  replace_na(list(Depthf = 10, Replicate = 1, Core = "T")) # remove NAs and create new dataset.
 
 sv$Environment <- factor(sv$Environment, levels = c("Stream", "Estuary", "Reef")) # Puts stream first.
 
@@ -414,89 +413,95 @@ op<- par(mfrow = c(1, 1), mar = c(3, 4, 1, 1))
 dotchart(sv$S.V, groups = sv$LTER_Site) # S/V versus Site.
 par(op) # Looking ok.
 
-pairs(sv) # Quick pairs plot to check correllated variables. Yep, variable choices still look good.
+ggpairs(sv) # Quick pairs plot to check correlated variables.
 
 #### STEP 1: Create a linear regression and check residuals.
 
 # Response variables - S/V
 # Explanatory variables - Group_3f, Environment
 
-c1 <- lm(S.V ~ Group_3f + Environment, data = sv) # Creates the linear model.
+c1 <- lm(SV ~ Group_3f + Environment, data = sv) # Creates the linear model.
 rc1 <- rstandard(c1) # Assigns standardized residuals to rc1.
+sv <- sv %>%
+  mutate(rc1 = rc1)
 
-plot(rc1 ~ sv$LTER_Site, xlab = "Site",
-     ylab = "Standardised residuals") # Plots said residuals.
-abline(0,0) # Some within site correlation, so it will definitely be part of a random structure.
-
-plot(rc1 ~ sv$Group, xlab = "Date Sampled",
-     ylab = "Standardised residuals") # Plots said residuals.
-abline(0,0) # Not quite as extreme as Site, but I still want to include it in my random structure.
+ggplot(data = sv, aes(x = LTER_Site, y = rc1)) +
+  geom_boxplot() + 
+  geom_point() +
+  labs(x = "Site", y = "Standardised residuals") # Plots said residuals.
 
 #### STEP 2: Fit the lm() with GLS and compare to lme().
 
-c2 <- gls(S.V ~ Group_3f + Environment, data = sv) # Linear regression.
-c3 <- lme(S.V ~ Group_3f + Environment, 
-          random =~1 | LTER_Site / Group, data = sv) # Creates the first LMEM with random term.
-anova(c2, c3) # Compares the two models. c3 preferred with AIC value of 1550.227.
+c2 <- gls(SV ~ Group_3f + Environment, data = sv) # Linear regression.
+c3 <- lme(SV ~ Group_3f + Environment, 
+          random =~1 | LTER_Site/Depthf/Replicate/Core, data = sv) # Creates the first LMEM with random term.
+anova(c2, c3) # Compares the two models. c3 preferred with AIC value of 1478.488.
 
 # STEP 3: Decide on a variance structure (aka random terms and correlation structure if any).
 
-c4 <- lme(S.V ~ Group_3f + Environment, random =~1 | Group, data = sv) # Remove Site from random term.
-c5 <- lme(S.V ~ Group_3f + Environment, random =~1 | LTER_Site, data = sv) # Remove Date sampled from random term.
+plot(c3, col=1) # Plots residuals before immediately applying variance transformation.
+qqnorm(c3) # Need a variacne structure by environment based on boxplots above.
 
-anova(c3, c4, c5) # Compares all three models. c3 is still preferred with AIC value of 1517.886.
+c4 <- lme(SV ~ Group_3f + Environment, 
+          random =~1 | LTER_Site/Depthf/Replicate/Core, 
+          data = sv,
+          weights = varIdent(form =~1 | Environment))
 
-plot(c3, col=1) # Plots residuals before immediately applying variance transformation. I don't think we need an additional variance structure here.
+anova(c3, c4) # Compares the two models. c3 is better with an AIC value of 1478.488, so we'll leave out this structure for now.
+
+qqnorm(c4) # Also, the variance transformation hasn't improved the looks of the qqplot anyway.
 
 # STEP 4: Fit the lme().
 
-# Using c3 <- lme(S.V ~ Group_3f + Environment, random =~1 | LTER_Site / Group, data = sv)
+# Using c3 <- lme(SV ~ Group_3f + Environment, random =~1 | LTER_Site / Depthf / Replicate / Core, data = sv)
 
 # STEP 5: Compare the lm() and lme().
 
-anova(c2, c3) # 3 definitely outperforms 2.
+# See Step 2.
 
 # STEP 6: Everything ok? Check residuals.
 
-plot(c3, col=1) # Residuals look pretty good.
-qqnorm(c3) # Looks a little curvy, but not terrible.
+# See Step 3.
 
 # STEP 7/8: Step-wise Optimal Fixed Structure
 
-c3_ml <- lme(S.V ~ Group_3f + Environment, 
-             random =~1 | LTER_Site / Group, method = "ML", data = sv) # Creates current model using ML structure.
-c6 <- lme(S.V ~ Environment, 
-          random =~1 | LTER_Site / Group, method = "ML", data = sv) # Removes region.
-c7 <- lme(S.V ~ Group_3f, 
-          random =~1 | LTER_Site / Group, method = "ML", data = sv) # Removes ecosystem.
-anova(c3_ml, c6, c7) # Compares all three models. c6 preferred with AIC value of 1511.511. So remove region.
+c3_ml <- lme(SV ~ Group_3f + Environment, 
+             random =~1 | LTER_Site/Depthf/Replicate/Core,
+             method = "ML", data = sv) # Creates current model using ML structure.
+c5 <- lme(SV ~ Environment, 
+          random =~1 | LTER_Site/Depthf/Replicate/Core,
+          method = "ML", data = sv) # Removes region.
+c6 <- lme(SV ~ Group_3f, 
+          random =~1 | LTER_Site/Depthf/Replicate/Core,
+          method = "ML", data = sv) # Removes ecosystem.
+anova(c3_ml, c5, c6) # Compares all three models. c5 preferred with AIC value of 1474.168. So remove region.
 
-c6full <- lme(S.V ~ Environment, 
-              random =~1 | LTER_Site / Group, method = "ML", data = sv)
-c6sub1 <- update(c6full, .~. -Environment) # Just checking...
-anova(c6full, c6sub1) # c6sub1 preferred, with AIC value of 1510.745, but I'm going to keep Environment in to have a structure of comparison.
-# c6full is the final full model!!!
+c5full <- lme(SV ~ Environment, 
+              random =~1 | LTER_Site/Depthf/Replicate/Core,
+              method = "ML", data = sv)
+c5sub1 <- update(c5full, .~. -Environment) # Just checking...
+anova(c5full, c5sub1) # c6sub1 preferred, with AIC value of 1472.719, but I'm going to keep Environment in to have a structure of comparison.
+# c5full is the final full model!!!
 
 # STEP 9: Refit with REML
 
-cfinal <- lme(S.V ~ Environment, 
-              random =~1 | LTER_Site / Group, method = "REML", data = sv)
+cfinal <- lme(SV ~ Environment, 
+              random =~1 | LTER_Site/Depthf/Replicate/Core,
+              method = "REML", data = sv)
 
 # Output of the model.
 summary(cfinal)
 plot(cfinal, col=1) # Checking residuals.
 qqnorm(cfinal) # I'll take it.
-#qqnorm(cfinal, ~ranef (.), col = 1) # Plot of random effect residuals not working, but residuals of the general model look good, so I'm going to go ahead with it.
-intervals(cfinal) # Show intervals.
 
 # Final results.
 anova(cfinal) # Output for the paper.
 
 # STEP 10: What does this mean in WORDS?
 
-# I applied a linear mixed effect modelling approach because the data are nested. My model suggests there is NO significant effect of either ecosystem type (stream, estuarine, marine) or Region (west to east) on S/V signatures of a given sediment sample. Random nested intercepts by date sampled and site were included.
+# I applied a linear mixed effect modelling approach because the data are nested. My model suggests there is NO significant effect of either ecosystem type (stream, estuarine, marine) or Region (west to east) on S/V signatures of a given sediment sample. Random nested intercepts by site/depth/replicate/core were included.
 
-# Equation: S/V = 2.45 + 0.26[Estuary] + 0.56[Reef] + random
+# Equation: S/V = 2.45 + 0.22[Estuary] + 0.62[Reef] + random
 
 # BONUS : Tukey's HSD Post Hoc
 cHSD <- glht(cfinal, linfct=mcp(Environment="Tukey"))
@@ -511,9 +516,9 @@ svmeans <- mained %>% # Takes the original dataset and then ...
 
 ```
 
-The final model took the form : S.V ~ Environment + 1|LTER_Site / Group
+The final model took the form : S/V ~ Environment + 1|LTER_Site / Depthf / Replicate / Core
 
-This translated to a formula of S/V = 2.45 + 0.26[Estuary] + 0.56[Reef] + random.
+This translated to a formula of S/V = 2.45 + 0.22[Estuary] + 0.62[Reef] + random.
 
 Post hoc results: All Environment comparisons, p > 0.05 (NS).
 
@@ -528,11 +533,13 @@ boxplot(C.V ~ Environment, data = mained) # Environmental boxplot. Fixed effect.
 boxplot(C.V ~ LTER_Site, data = mained) # Site boxplot. Random effect.
 boxplot(C.V ~ Group, data = mained) # Date boxplot. Fixed + random effect?
 
-# So, based on boxplots and Sigma model, I move forward with Group_3 (region), Environment, and Group (date sampled) as fixed variables and Group (date sampled) and Site as random NESTED variables, as with S/V.
+# So, based on boxplots and Sigma model, I move forward with Group_3 (region) and Environment as fixed variables and Site/Depth/Replicate/Core as random NESTED variables, as with S/V.
 
 cv <- mained %>%
-  dplyr::select(Group_3f, Environment, LTER_Site, Group, C.V) %>%
-  na.omit # Create new dataset.
+  dplyr::select(Group_3f, Environment, LTER_Site, Depthf, Replicate, Core, Group, `C/V`) %>%
+  filter(!is.na(`C/V`)) %>%
+  mutate(CV = `C/V`) %>%
+  replace_na(list(Depthf = 10, Replicate = 1, Core = "T")) # remove NAs and create new dataset.
 
 cv$Environment <- factor(cv$Environment, levels = c("Stream", "Estuary", "Reef")) # Puts stream first.
 
@@ -540,55 +547,40 @@ op<- par(mfrow = c(1, 1), mar = c(3, 4, 1, 1))
 dotchart(cv$C.V, groups = cv$LTER_Site) # C/V versus Site on left from original dataset.
 par(op) # Ok, leaving this for now, and we'll see how the residuals look.
 
-pairs(cv) # Quick pairs plot to check correllated variables. Yep, variable choices still look good. It really looks like there's a trend across time in C.V (suggesting fresher material), but we can't use Group because I think it's too correlated with Environment still.
+ggpairs(cv) # Quick pairs plot to check correllated variables. Yep, variable choices still look good.
 
 #### STEP 1: Create a linear regression and check residuals.
 
 # Response variables - C/V
 # Explanatory variables - Group_3f, Environment
 
-d1 <- lm(C.V ~ Group_3f + Environment, data = cv) # Initial linear model.
+d1 <- lm(CV ~ Group_3f + Environment, data = cv) # Initial linear model.
 rd1 <- rstandard(d1) # Assigns standardized residuals to rd1.
+cv <- cv %>%
+  mutate(rd1 = rd1)
 
-plot(rd1 ~ cv$LTER_Site, xlab = "Site",
-     ylab = "Standardised residuals") # Plots said residuals.
-abline(0,0) # Some within site correlation, so it will definitely be part of a random structure.
-
-plot(rd1 ~ cv$Group, xlab = "Date Sampled",
-     ylab = "Standardised residuals") # Plots said residuals.
-abline(0,0) # Some within sampling date correlation, so it will also be in random structure.
+ggplot(data = cv, aes(x = LTER_Site, y = rd1)) +
+  geom_boxplot() + 
+  geom_point() +
+  labs(x = "Site", y = "Standardised residuals") # Plots said residuals.
 
 #### STEP 2: Fit the lm() with GLS and compare to lme().
 
-d2 <- gls(C.V ~ Group_3f + Environment, data = cv) # Linear regression.
-d3 <- lme(C.V ~ Group_3f + Environment, 
-          random =~1 | LTER_Site / Group, data = cv) # Creates the first LMEM with random term.
-anova(d2, d3) # Compares the two models. d3 preferred with AIC value of -711.45.
+d2 <- gls(CV ~ Group_3f + Environment, data = cv) # Linear regression.
+d3 <- lme(CV ~ Group_3f + Environment, 
+          random =~1 | LTER_Site/Depthf/Replicate/Core, data = cv) # Creates the first LMEM with random term.
+anova(d2, d3) # Compares the two models. d3 preferred with AIC value of -619.3107.
 
 # STEP 3: Decide on a variance structure (aka random terms and correlation structure if any).
 
-d4 <- lme(C.V ~ Group_3f + Environment, 
-          random =~1 | Group, data = cv) # Remove Site from random term.
-d5 <- lme(C.V ~ Group_3f + Environment, 
-          random =~1 | LTER_Site, data = cv) # Remove Date sampled from random term.
-anova(d3, d4, d5) # Compares all three models. d3 is still preferred.
+plot(d3, col=1) # Plots residuals before immediately applying variance transformation. Looks fine.
+qqnorm(d3) # Yeah, this curve resembles the one in the S/V data.
 
-plot(d3, col=1) # Plots residuals before immediately applying variance transformation. We need an additional variance structure.
-
-# Looks like we should add in the varIden() variance structure for the observations in different Ecosystem Types.
-
-d6 <- lme(C.V ~ Group_3f + Environment, 
-          random =~1 | LTER_Site / Group, data = cv, 
-          weights = varIdent(form =~1 | Environment)) # Adding in a variance structure to allow for different variance by ecosystem.
-anova(d3, d6) # Compares both models. d6 is better with AIC value of -746.236.
-
-plot(d6, col=1) # Residuals honestly don't look that different.
-
-# I tried this same varident() form with different variances by date, but the "iteration limit reached without convergence" so for simplicity's sake, I'm going to move forward without the additional variance structure.
+# Moving forward without additional variance structure.
 
 # STEP 4: Fit the lme().
 
-# Using d3 <- lme(C.V ~ Group_3f + Environment, random =~1 | LTER_Site / Group, data = cv)
+# Using d3 <- lme(CV ~ Group_3f + Environment, random =~1 | LTER_Site/Depthf/Replicate/Core, data = cv)
 
 # STEP 5: Compare the lm() and lme().
 
@@ -596,49 +588,51 @@ plot(d6, col=1) # Residuals honestly don't look that different.
 
 # STEP 6: Everything ok? Check residuals.
 
-plot(d3, col=1) # A little trendy <0.1, but I'm going to leave it.
-qqnorm(d3) # Looks pretty curvy. But I'm going to move forward without a log-transformation.
+# See Step 3.
 
 # STEP 7/8: Step-wise Optimal Fixed Structure
 
-d3_ml <- lme(C.V ~ Group_3f + Environment, 
-             random =~1 | LTER_Site / Group, method = "ML", data = cv) # Creates current model using ML structure.
-d7 <- lme(C.V ~ Environment, 
-          random =~1 | LTER_Site / Group, method = "ML", data = cv) # Removes region.
-d8 <- lme(C.V ~ Group_3f, 
-          random =~1 | LTER_Site / Group, method = "ML", data = cv) # Removes ecosystem.
-anova(d3_ml, d7, d8) # Compares all three models. d7 is preferred with AIC value of -742.7207. So, I will remove region.
+d3_ml <- lme(CV ~ Group_3f + Environment, 
+             random =~1 | LTER_Site/Depthf/Replicate/Core,
+             method = "ML", data = cv) # Creates current model using ML structure.
+d4 <- lme(CV ~ Environment, 
+          random =~1 | LTER_Site/Depthf/Replicate/Core, 
+          method = "ML", data = cv) # Removes region.
+d5 <- lme(CV ~ Group_3f, 
+          random =~1 | LTER_Site/Depthf/Replicate/Core, 
+          method = "ML", data = cv) # Removes ecosystem.
+anova(d3_ml, d4, d5) # Compares all three models. d7 is preferred with AIC value of -651.5736. So, I will remove region.
 
-d7full <- lme(C.V ~ Environment, 
-              random =~1 | LTER_Site / Group, method = "ML", data = cv)
-d7sub1 <- update(d7full, .~. -Environment) # Is Environment necessary?
-anova(d7full, d7sub1) # d7full is preferred with an AIC value of -742.7207 so yes!
-# d7full is the final full model!!!
+d6full <- lme(CV ~ Environment, 
+              random =~1 | LTER_Site/Depthf/Replicate/Core,
+              method = "ML", data = cv)
+d6sub1 <- update(d6full, .~. -Environment) # Is Environment necessary?
+anova(d6full, d6sub1) # d6full is preferred with an AIC value of -651.5736 so yes!
+# d6full is the final full model!!!
 
 # STEP 9: Refit with REML
 
-dfinal <- lme(C.V ~ Environment, 
-              random =~1 | LTER_Site / Group, method = "REML", data = cv) # Yay!! 
+dfinal <- lme(CV ~ Environment, 
+              random =~1 | LTER_Site/Depthf/Replicate/Core,
+              method = "REML", data = cv) # Yay!! 
 
 # Output of the model.
 summary(dfinal)
 plot(dfinal, col=1) # Checking residuals.
 qqnorm(dfinal) # I'll take it.
-#qqnorm(dfinal, ~ranef (.), col = 1) # Plot of random effect residuals not working, but residuals of the general model look good, so I'm going to go ahead with it.
-intervals(dfinal) # Show intervals.
 
 # Final results.
 anova(dfinal) # Output for the paper
 
 # STEP 10: What does this mean in WORDS?
 
-# I applied a linear mixed effect modelling approach because the data are nested. My model suggests there is a significant effect of ecosystem type (stream, estuarine, marine) but not Region (west to east) on C/V signatures of a given sediment sample. Date appeared as if it could be significant, but I was unable to test *both* environment and date simultaneously. So, I settled with focusing on environment given that it was significant for other full dataset measure analyses. Random nested intercepts by date sampled and site were included.
+# I applied a linear mixed effect modelling approach because the data are nested. My model suggests there is a significant effect of ecosystem type (stream, estuarine, marine) but not Region (west to east) on C/V signatures of a given sediment sample. Random nested intercepts by site/depth/replicate/core were included.
 
-# Equation: C/V = 0.27 + 0.06[Estuary] - 0.17[Reef] + random
+# Equation: C/V = 0.27 + 0.04[Estuary] - 0.17[Reef] + random
 
 # BONUS : Tukey's HSD Post Hoc
 dHSD <- glht(dfinal, linfct=mcp(Environment="Tukey"))
-summary(dHSD) # No significant difference between Stream & Estuary, but significant between Stream & Reef (p<0.0001) and Estuary & Reef (p<0.0001).
+summary(dHSD) # See below for results.
 
 # Value calculations for manuscript:
 
@@ -649,11 +643,11 @@ cvmeans <- mained %>% # Takes the original dataset and then ...
 
 ```
 
-The final model took the form : C.V ~ Environment + 1|LTER_Site / Group
+The final model took the form : C.V ~ Environment + 1|LTER_Site / Depth / Replicate / Core
 
-This translated to a formula of C/V = 0.27 + 0.07[Estuary] - 0.17[Reef] + random.
+This translated to a formula of C/V = 0.27 + 0.04[Estuary] - 0.17[Reef] + random.
 
-Post hoc results: Stream - Estuary, p = 0.241 (NS); Stream - Reef, p < 0.0001; Estuary - Reef, p < 0.0001.
+Post hoc results: Stream - Estuary, p = 0.47 (NS); Stream - Reef, p < 0.0001; Estuary - Reef, p < 0.0001.
 
 ##P/V+S
 
@@ -666,11 +660,13 @@ boxplot(P..V.S. ~ Environment, data = mained) # Environment boxplot. Fixed effec
 boxplot(P..V.S. ~ LTER_Site, data = mained) # Site boxplot. Random effect.
 boxplot(P..V.S. ~ Group, data = mained) # Sampling date boxplot. Random effect. Again, looks like there may be a temporal trend, but I am going to focus on differentiating between environments for now, since I do not feel I can do both.
 
-# So, based on boxplots, I move forward with Group_3f (region) and Environment as fixed variables and Group (date sampled) and Site as random NESTED variables.
+# So, based on boxplots, I move forward with Group_3f (region) and Environment as fixed variables and random NESTED variable as above.
 
 pvs <- mained %>%
-  dplyr::select(Group_3f, Environment, LTER_Site, Group, P..V.S.) %>%
-  na.omit # Create new dataset.
+  dplyr::select(Group_3f, Environment, LTER_Site, Depthf, Replicate, Core, Group, `P/(V+S)`) %>%
+  filter(!is.na(`P/(V+S)`)) %>%
+  mutate(PVS = `P/(V+S)`) %>%
+  replace_na(list(Depthf = 10, Replicate = 1, Core = "T"))
 
 pvs$Environment <- factor(pvs$Environment, levels = c("Stream", "Estuary", "Reef")) # Puts stream first.
 
@@ -678,14 +674,14 @@ op<- par(mfrow = c(1, 1), mar = c(3, 4, 1, 1))
 dotchart(pvs$P..V.S., groups = pvs$LTER_Site) # P/V+S versus Site.
 par(op) # Looking ok - I think I'm going to log transform since I'm not taking out any more outliers.
 
-pvs$logPVS <- log10(pvs$P..V.S.) # Makes log-transformed column.
+pvs$logPVS <- log10(pvs$PVS) # Makes log-transformed column.
 
 op<- par(mfrow = c(1, 2), mar = c(3, 4, 1, 1))
 dotchart(pvs$P..V.S., groups = pvs$LTER_Site) # P/V+S versus Site on left from created dataset.
 dotchart(pvs$logPVS, groups = pvs$LTER_Site) # log(P/V+S) versus Site on right from created dataset.
 par(op) # Looking way better!!
 
-pairs(pvs) # Quick pairs plot to check correllated variables. Yep, variable choices still look good. Again, looks like there's a trend in time...I'm making the executive decision to focus on investigating between environmental differences for the entire dataset. I will drill down into temporal changes in future models.
+ggpairs(pvs) # Quick pairs plot to check correllated variables. Yep, variable choices still look good.
 
 #### STEP 1: Create a linear regression and check residuals.
 
@@ -694,86 +690,81 @@ pairs(pvs) # Quick pairs plot to check correllated variables. Yep, variable choi
 
 e1 <- lm(logPVS ~ Group_3f + Environment, data = pvs) # Creates the initial linear model.
 re1 <- rstandard(e1) # Assigns standardized residuals to e.j.
+pvs <- pvs %>%
+  mutate(re1 = re1)
 
-plot(re1 ~ pvs$LTER_Site, xlab = "Site",
-     ylab = "Standardised residuals") # Plots said residuals.
-abline(0,0) # Removing from random structure.
-
-plot(re1 ~ pvs$Group, xlab = "Date Sampled",
-     ylab = "Standardised residuals") # Plots said residuals.
-abline(0,0) # Including it in my random structure. Again seeing this trend.
+ggplot(data = pvs, aes(x = LTER_Site, y = re1)) +
+  geom_boxplot() + 
+  geom_point() +
+  labs(x = "Site", y = "Standardised residuals") # Plots said residuals.
 
 #### STEP 2: Fit the lm() with GLS and compare to lme().
 
 e2 <- gls(logPVS ~ Group_3f + Environment, data = pvs) # Linear regression.
 e3 <- lme(logPVS ~ Group_3f + Environment, 
-          random =~1 | Group, data = pvs) # Creates the first LMEM with random term.
-anova(e2, e3) # Compares the two models. e3 preferred with an AIC value of 105.2018.
+          random =~1 | LTER_Site/Depthf/Replicate/Core, 
+          data = pvs) # Creates the first LMEM with random term.
+anova(e2, e3) # Compares the two models. e3 preferred with an AIC value of 135.4327.
 
 # STEP 3: Decide on a variance structure (aka random terms and correlation structure if any).
 
 plot(e3, col=1) # Plots residuals before immediately applying variance transformation.
-
-e4 <- lme(logPVS ~ Group_3f + Environment, 
-          random =~1 | Group, data = pvs,
-          weights = varIdent(form =~1 | Environment)) # Adding in a variance structure to allow for different variance by ecosystem - based on boxplots.
-
-anova(e3, e4) # Compares models. e4 is preferred based on AIC value of 79.24088.
-
-plot(e4, col=1) # Made the slightest difference in residuals.
+qqnorm(e3) # Looks A-OK!
 
 # I'm going back to the simpler structure of e3.
 
 # STEP 4: Fit the lme().
 
-# Using e3 <- lme(logPVS ~ Group_3f + Environment, random =~1 | Group, data = pvs)
+# Using e3 <- lme(logPVS ~ Group_3f + Environment, random =~1 | LTER_Site/Depthf/Replicate/Core, data = pvs)
 
 # STEP 5: Compare the lm() and lme().
 
-# See Step #2.
+# See Step 2.
 
 # STEP 6: Everything ok? Check residuals.
 
-plot(e3, col=1) # Residuals look pretty good.
-qqnorm(e3) # Looks really quite good!
+# See Step 3.
 
 # STEP 7/8: Step-wise Optimal Fixed Structure
 
 e3_ml <- lme(logPVS ~ Group_3f + Environment, 
-             random =~1 | Group, method = "ML", data = pvs) # Creates model using ML structure.
-e5 <- lme(logPVS ~ Environment, 
-          random =~1 | Group, method = "ML", data = pvs) # Removes region.
-e6 <- lme(logPVS ~ Group_3f, 
-          random =~1 | Group, method = "ML", data = pvs) # Removes ecosystem.
-anova(e3_ml, e5, e6) # Compares all three models. e6 is slightly preferred with an AIC value of 84. 97723. So, remove Environment.
+             random =~1 | LTER_Site/Depthf/Replicate/Core,
+             method = "ML", data = pvs) # Creates model using ML structure.
+e4 <- lme(logPVS ~ Environment, 
+          random =~1 | LTER_Site/Depthf/Replicate/Core,
+          method = "ML", data = pvs) # Removes region.
+e5 <- lme(logPVS ~ Group_3f, 
+          random =~1 | LTER_Site/Depthf/Replicate/Core,
+          method = "ML", data = pvs) # Removes ecosystem.
+anova(e3_ml, e4, e5) # Compares all three models. e4 is slightly preferred with an AIC value of 118.0819. So, remove region.
 
-e6full <- lme(logPVS ~ Group_3f, 
-              random =~1 | Group, method = "ML", data = pvs)
-e6sub1 <- update(e6full, .~. -Group_3f) # Just checking...
-anova(e6full, e6sub1) # So removing both fixed variables, e6sub1, is preferred with an AIC value of 81.95200.
+e6full <- lme(logPVS ~ Environment, 
+              random =~1 | LTER_Site/Depthf/Replicate/Core,
+              method = "ML", data = pvs)
+e6sub1 <- update(e6full, .~. -Environment) # Just checking...
+anova(e6full, e6sub1) # So removing both fixed variables, e6sub1, is preferred with an AIC value of 114.5014.
 
-#To stick with our "Environment" as a fixed effect theme, I'm going to use e5 going forward.
+#To stick with our "Environment" as a fixed effect, I'm going to use e6full going forward.
 
 # STEP 9: Refit with REML
 
 efinal <- lme(logPVS ~ Environment, 
-              random = ~1 | Group, method = "REML", data = pvs)
+              random = ~1 | LTER_Site/Depthf/Replicate/Core,
+              method = "REML", data = pvs)
 
 # Output of the model.
 summary(efinal)
 plot(efinal, col=1) # Checking residuals.
 qqnorm(efinal) # I'll take it.
-qqnorm(efinal, ~ranef (.), col = 1) # I'm going to go ahead with it.
-intervals(efinal) # Show intervals.
 
 # Final results.
 anova(efinal) # Output for the paper
 
 # STEP 10: What does this mean in WORDS?
 
-# I applied a linear mixed effect modelling approach because the data are nested. My model suggests there is NO significant effect of either ecosystem type (stream, estuarine, marine) or Region (west to east) on P/V+S signatures of a given sediment sample. Random nested intercepts by date sampled.
+# I applied a linear mixed effect modelling approach because the data are nested. My model suggests there is NO significant effect of either ecosystem type (stream, estuarine, marine) or Region (west to east) on P/V+S signatures of a given sediment sample. Random nested intercepts by site/depth/replicate/core section sampled.
 
-# Equation: log(P/V+S) = -0.76 - 0.15[Estuary] - 0.07[Reef] + random
+# Equation: log(P/V+S) = -0.77 - 0.09[Estuary] - 0.01[Reef] + random
 
 # BONUS : Tukey's HSD Post Hoc
 
@@ -788,9 +779,9 @@ pvsmeans <- mained %>% # Takes the original dataset and then ...
 
 ```
 
-The final model took the form : log(PVS) ~ Environment + 1|Group
+The final model took the form : log(PVS) ~ Environment + 1|LTER_Site/Depth/Replicate/Core
 
-This translated to a formula of P/V+S = -0.76 - 0.15[Estuary] - 0.07[Reef] + random.
+This translated to a formula of log(P/V+S) = -0.77 - 0.09[Estuary] - 0.01[Reef] + random.
 
 Post hoc results: NA.
 
