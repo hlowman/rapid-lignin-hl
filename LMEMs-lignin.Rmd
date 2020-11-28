@@ -2570,13 +2570,13 @@ boxplot(Sigma8 ~ Depth, data = marine) # Water depth boxplot. Fixed effect.
 boxplot(Sigma8 ~ Core, data = marine) # Core boxplot. Fixed effect.
 
 sigmar <- marine %>%
-  dplyr::select(Type, LTER_Site, Depth, Core, Group, Sigma8) %>%
+  dplyr::select(Type, LTER_Site, Replicate, Depthf, Core, Group, `Diameter_50.00.`, Sigma8) %>%
+  mutate(Diameter_50 = `Diameter_50.00.`) %>%
   na.omit # Creates new dataset.
 
-pairs(sigmar) # Pairs plot. So, I'm going to investigate all four as fixed effects at first, but I think the Site should go in as a random effect too.
+ggpairs(sigmar) # Pairs plot. So, I'm going to investigate all four as fixed effects at first, but I think the Site should go in as a random effect too.
 
 sigmar$Type <- factor(sigmar$Type, levels = c("MarineRunoff", "Marine")) # Relevels.
-sigmar$fDepth <- as.factor(sigmar$Depth) # Make a new column with Depth as a factor.
 
 #### STEP 1: Create a linear regression and check residuals.
 
@@ -2591,49 +2591,60 @@ dotchart(sigmar$Sigma8, groups = sigmar$Site) # Sigma8 versus Site on left with 
 dotchart(sigmar$logSigma8, groups = sigmar$Site) # LogSigma8 versus Site on righ.
 par(op) # Muuuuuuch better.
 
-pairs(sigmar)
+ggpairs(sigmar)
 
 # Based on boxplots & pairplots : 
 # Response variables - logSigma8
-# Explanatory variables - Type, Site, Depth, Core, Group
+# Explanatory variables - Type, Site, Replicate, Core, Depthf, Diameter_50, Group
 
-s1 <- lm(logSigma8 ~ Type + LTER_Site + fDepth + Core + Group, data = sigmar) # Initial linear model.
-
+s1 <- lm(logSigma8 ~ Type + Depthf + Group + Core + Diameter_50, data = sigmar) # Initial linear model.
 rs1 <- rstandard(s1) # Assigns standardized residuals to rs1.
-plot(rs1 ~ sigmar$LTER_Site, xlab = "Site",
-     ylab = "Standardised residuals") # Plots said residuals.
-abline(0,0) # Since boxplots are all about zero, there is no within-site correlation, so it WILL NOT be used as a random effect.
+sigmar <- sigmar %>%
+  mutate(rs1 = rs1)
 
-plot(rs1 ~ sigmar$Group, xlab = "Date",
-     ylab = "Standardised residuals") # Plots said residuals.
-abline(0,0) # Group looks the same - all about zero.
+ggplot(data = sigmar, aes(x = LTER_Site, y = rs1)) + 
+  geom_boxplot() + 
+  geom_point() +
+  labs(x = "Site", y = "Standardised residuals") # Plots said residuals.
 
-plot(rs1 ~ sigmar$fDepth, xlab = "Depth",
-     ylab = "Standardised residuals") # Plots said residuals.
-abline(0,0) # Depth is exactly about zero.
+ggplot(data = sigmar, aes(x = Group, y = rs1)) + 
+  geom_boxplot() + 
+  geom_point() +
+  labs(x = "Date", y = "Standardised residuals")
 
-plot(rs1 ~ sigmar$Core, xlab = "Core Section",
-     ylab = "Standardised residuals") # Plots said residuals.
-abline(0,0) # Core is exactly about zero.
+ggplot(data = sigmar, aes(x = Depthf, y = rs1)) + 
+  geom_boxplot() + 
+  geom_point() +
+  labs(x = "Water Depth", y = "Standardised residuals") # May need to allow for different variances based on water depth sampled.
 
-# Ok, due to sampling structure, going to keep in LTER_Site as a random effect as I've done above.
+ggplot(data = sigmar, aes(x = Core, y = rs1)) + 
+  geom_boxplot() + 
+  geom_point() +
+  labs(x = "Section of Core", y = "Standardised residuals")
+
+ggplot(data = sigmar, aes(x = Type, y = rs1)) + 
+  geom_boxplot() + 
+  geom_point() +
+  labs(x = "Distance from Stream", y = "Standardised residuals")
 
 #### STEP 2: Fit the lm() with GLS and compare to lme().
 
-s2 <- gls(logSigma8 ~ Type + fDepth + Core + Group, data = sigmar) # Linear regression since it has no additional calls. Removed Site as a fixed effect because it resulted in an error message.
+s2 <- gls(logSigma8 ~ Type + Depthf + Group + Core + Diameter_50, data = sigmar) # Linear regression since it has no additional calls. Removed Site as a fixed effect because it resulted in an error message.
 
-s3 <- lme(logSigma8 ~ Type + fDepth + Core + Group, random =~1 | LTER_Site, data = sigmar) # Creates the first LMEM with a random term so the lme() function works.
+s3 <- lme(logSigma8 ~ Type + Depthf + Group + Core + Diameter_50, 
+          random =~1 | LTER_Site/Depthf/Replicate/Core,
+          data = sigmar) # Creates the first LMEM with a random term so the lme() function works.
 
-anova(s2, s3) # Compares the two models. s3 preferred with an AIC value of 421.9460.
+anova(s2, s3) # Compares the two models. s3 preferred with an AIC value of 240.3016.
 
 #### STEP 3: Decide on a variance structure (aka random terms).
 
 plot(s3, col=1) # Check the residuals before jumping right in to applying variance transformation.
-qqnorm(s3) # This actually looks pretty good - so I'm going to skip the added variance structure. (This is mostly likely due to log transformation.)
+qqnorm(s3) # This actually looks pretty good - so I'm going to skip the added variance structure.
 
 # STEP 4: Fit the lme().
 
-# Using s3 <- lme(logSigma8 ~ Type + fDepth + Core + Group, random =~1 | LTER_Site, data = sigmar) 
+# Using s3 <- lme(logSigma8 ~ Type + Depthf + Group + Core + Diameter_50, random =~1|LTER_Site/Depthf/Replicate/Core, data = sigmar) 
 
 # STEP 5: Compare the lm() and lme().
 
@@ -2645,22 +2656,29 @@ qqnorm(s3) # This actually looks pretty good - so I'm going to skip the added va
 
 # STEP 7/8: Step-wise Optimal Fixed Structure
 
-s3_ml <- lme(logSigma8 ~ Type + fDepth + Core + Group, 
-             random =~1 | LTER_Site, method = "ML", data = sigmar) # ML model structure.
+s3_ml <- lme(logSigma8 ~ Type + Depthf + Group + Core + Diameter_50, 
+             random =~1 | LTER_Site/Depthf/Replicate/Core,
+             method = "ML", data = sigmar) # ML model structure.
 
 s3sub1 <- update(s3_ml, .~. -Type) # Removes Type.
-s3sub2 <- update(s3_ml, .~. -fDepth) # Removes Depth.
-s3sub3 <- update(s3_ml, .~. -Core) # Removes Core.
-s3sub4 <- update(s3_ml, .~. -Group) # Removes Group.
+s3sub2 <- update(s3_ml, .~. -Depthf) # Removes Depth.
+s3sub3 <- update(s3_ml, .~. -Group) # Removes Group.
+s3sub4 <- update(s3_ml, .~. -Core) # Removes Core.
+s3sub5 <- update(s3_ml, .~. -Diameter_50) # Removes Diameter.
 
-anova(s3_ml, s3sub1, s3sub2, s3sub3, s3sub4) # Compare the models. s3_ml preferred with an AIC value of 395.4894, so keep everything in.
+anova(s3_ml, s3sub1, s3sub2, s3sub3, s3sub4, s3sub5) # Compare the models. s3_ml preferred with an AIC value of 395.4894, so keep everything in.
 
 # s3_ml is the final full model!!!
 
 # STEP 9: Refit with REML
 
-sfinal <- lme(logSigma8 ~ Type + fDepth + Core + Group, 
-              random =~1 | LTER_Site, method = "REML", data = sigmar) # YIPEE!!!
+sigmar <- sigmar %>%
+  mutate(Core = factor(Core, levels = c("B", "T"))) %>%
+  mutate(Group = factor(Group))
+
+sfinal <- lme(logSigma8 ~ Type + Depthf + Group + Core + Diameter_50, 
+              random =~1 | LTER_Site/Depthf/Replicate/Core,
+              method = "REML", data = sigmar) # YIPEE!!!
 
 # Output of the model.
 summary(sfinal)
@@ -2668,28 +2686,26 @@ summary(sfinal)
 # Checking residuals.
 plot(sfinal, col=1) # Not perfect, but no pattern.
 qqnorm(sfinal) # This makes me feel pretty good.
-qqnorm(sfinal, ~ranef (.), col = 1) # Looking good!
-intervals(sfinal)# Show intervals.
 
 # Final results.
 anova(sfinal)
 
 # STEP 10: What does this mean in WORDS?
 
-# My model suggests there is NO significant effect of ecosystem type (marine sites near and far from stream mouths) on Sigma 8 concentrations of a given sediment sample. However, Date, Depth (10m/20m) and Core (Top/Bottom section) were significant.
+# My model suggests there is NO significant effect of ecosystem type (marine sites near and far from stream mouths) on Sigma 8 concentrations of a given sediment sample. However, Date, Depth (10m/20m), Core Section (Top/Bottom section), and Median Diameter were significant.
 
-# Equation: log(Sigma 8) = -0.70 - 0.26[Marine] + 0.6[20m] - 0.19[Top] + 0.01[GroupE] - 0.09[GroupG] + 0.06[GroupJ] + random
+# Equation: log(Sigma 8) = -0.54 - 0.28[Marine] + 0.57[20m] - 0.19[Top] + 0.02[GroupE] - 0.07[GroupG] + 0.07[GroupJ] - 0.001[Diameter] + random
 
 # BONUS POST HOC:
 
-sHSD_Depth <- glht(sfinal, linfct=mcp(fDepth="Tukey")) # Tukey's post hoc analysis on fDepth factor.
-summary(sHSD_Depth) # 20 and 10 m are significantly different from one another (p < 0.0001).
+sHSD_Depth <- glht(sfinal, linfct=mcp(Depthf="Tukey")) # Tukey's post hoc analysis on fDepth factor.
+summary(sHSD_Depth) # 20 and 10 m are significantly different from one another (p = 0.00115).
 
 sHSD_Core <- glht(sfinal, linfct=mcp(Core="Tukey")) # Tukey's post hoc analysis on Core factor.
 summary(sHSD_Core) # Top and bottom core sections are significantly different (p < 0.0001).
 
 sHSD_Group <- glht(sfinal, linfct=mcp(Group="Tukey")) # Tukey's post hoc analysis on Date factor.
-summary(sHSD_Group) # June 2017 (J) and March 2017 (G) were significantly different (p = 0.0187).
+summary(sHSD_Group) # June 2017 (J) and March 2017 (G) were significantly different (p = 0.0007).
 
 # Value calculations for manuscript:
 
@@ -2700,11 +2716,11 @@ sigmarmeans <- sigmar %>% # Takes the original dataset and then ...
 
 ```
 
-The final model took the form : logSigma8 ~ Type + Depth + Core + Group + 1|LTER_Site
+The final model took the form : logSigma8 ~ Type + Depthf + Core + Group + Diameter_50 + 1|LTER_Site/Depthf/Replicate/Core
 
-This translated to a formula of log(Sigma8) = -0.70 - 0.26[Marine] + 0.6[20m] - 0.19[Top] + 0.01[GroupE] - 0.09[GroupG] + 0.06[GroupJ] + random.
+This translated to a formula of log(Sigma 8) = -0.54 - 0.28[Marine] + 0.57[20m] - 0.19[Top] + 0.02[GroupE] - 0.07[GroupG] + 0.07[GroupJ] - 0.001[Diameter] + random.
 
-Post hoc results: 20M - 10M, p < 0.0001; Top - Bottom, p < 0.0001; March 2017 - June 2017, p = 0.0187.
+Post hoc results: 20M - 10M, p = 0.00115; Top - Bottom, p < 0.0001; March 2017 - June 2017, p = 0.0007.
 
 ## Lambda (marine)
 
