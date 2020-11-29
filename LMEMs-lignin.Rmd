@@ -643,7 +643,7 @@ cvmeans <- mained %>% # Takes the original dataset and then ...
 
 ```
 
-The final model took the form : C.V ~ Environment + 1|LTER_Site / Depth / Replicate / Core
+The final model took the form : C/V ~ Environment + 1|LTER_Site / Depth / Replicate / Core
 
 This translated to a formula of C/V = 0.27 + 0.04[Estuary] - 0.17[Reef] + random.
 
@@ -911,7 +911,7 @@ bdvmeans <- mained %>% # Takes the original dataset and then ...
 
 ```
 
-The final model took the form : log(PVS) ~ Environment + 1|LTER_Site / Depthf / Replicate / Core
+The final model took the form : log(3,5-Bd/V) ~ Environment + 1|LTER_Site / Depthf / Replicate / Core
 
 This translated to a formula of log(3,5-Bd/V) = -0.77 + 0.006[Estuary] + 0.44[Reef] + random.
 
@@ -3534,5 +3534,42 @@ The final model took the form : log(3,5Bd/V) ~ Type + Group + Depth + Core + Dia
 This translated to a formula of log(3,5-Bd/V) = - 0.31 + 0.16[GroupE] + 0.18[GroupG] + 0.24[GroupJ] - 0.34[Depth20] + 0.06[CoreT] - 0.18[MarineRunoff] + 0.0009[Diameter_50] + random.
 
 Post hoc results: Dec15 & Jun16, p < 0.001; Dec15 & Mar17, p < 0.001; Dec15 & Jun17, p < 0.001; 20m & 10m, p = 0.00251; Top & Bottom, p = 0.00334.
+
+## Added Stats
+
+```{r grain size}
+
+# Some additional grain size estimates for the manuscript.
+
+GSmeans1 <- mained %>%
+  group_by(Environment, Depthf) %>%
+  summarize(mean_med = mean(`Diameter_50.00%`, na.rm = TRUE),
+            sd_med = sd(`Diameter_50.00%`, na.rm = TRUE),
+            mean_clay = mean(perc_Clay, na.rm = TRUE),
+            sd_clay = sd(perc_Clay, na.rm = TRUE),
+            mean_silt = mean(perc_Silt, na.rm = TRUE),
+            sd_silt = sd(perc_Silt, na.rm = TRUE),
+            mean_sand = mean(perc_Sand, na.rm = TRUE),
+            sd_sand = sd(perc_Sand, na.rm = TRUE)) %>% # Calculates summaries ...
+  ungroup()
+
+View(GSmeans1)
+
+GSmeans2 <- mained %>%
+  group_by(Environment) %>%
+  summarize(mean_med = mean(`Diameter_50.00%`, na.rm = TRUE),
+            sd_med = sd(`Diameter_50.00%`, na.rm = TRUE),
+            mean_clay = mean(perc_Clay, na.rm = TRUE),
+            sd_clay = sd(perc_Clay, na.rm = TRUE),
+            mean_silt = mean(perc_Silt, na.rm = TRUE),
+            sd_silt = sd(perc_Silt, na.rm = TRUE),
+            mean_sand = mean(perc_Sand, na.rm = TRUE),
+            sd_sand = sd(perc_Sand, na.rm = TRUE)) %>% # Calculates summaries ...
+  ungroup()
+
+View(GSmeans2)
+
+```
+
 
 This is the end of the RMarkdown document.
