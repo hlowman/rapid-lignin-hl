@@ -19,7 +19,14 @@ First, I will load the same dataset and necessary packages.
 
 ```{r data and packages, include=FALSE}
 
-master <- read.csv("RAPID_Master_Datasheet_add_region_streamcode.csv") # Loads the newly updated dataset, as of April 8, 2019. This same dataset is used for the linear mixed effects models.
+# Load packages.
+library(tidyverse)
+library(lubridate)
+
+# Load datasets.
+rain <- read_csv("SBCounty_Gauge234.csv") # Imports necessary data that's been transcribed from the online pdf document into a csv file.
+
+master <- read_csv("RAPID_Master_Datasheet_add_region_streamcode.csv") # Loads the newly updated dataset, as of April 8, 2019. This same dataset is used for the linear mixed effects models.
 
 # In addition, all NDs from Matthieu's original reports are replaced as NAs. For reasoning on why they are not 0s, see either of the other RMarkdown files in this project folder.
 
@@ -29,7 +36,71 @@ mastered <- master[ -c(56, 66, 164, 238, 300, 387, 389), ] # Removes outliers fr
 
 # This dataset has already been QAQCed.
 
-library(tidyverse)
+```
+
+### Figure 2
+
+```{r Fig2, echo=FALSE}
+
+rain <- rain %>%
+  mutate(Rainfall_cm = Rainfall_inches*2.54) %>% # Calculates rainfall in centimeters in a new column.
+  mutate(DATE = mdy(Date)) # Transforms date into recognized date format.
+
+rainplot <- ggplot(rain, aes(DATE, Rainfall_cm)) +
+  annotate("rect", fill = "gray88", alpha = 0.75, 
+        xmin = mdy("12-01-2015"), xmax = mdy("12-31-2015"),
+        ymin = 13, ymax = Inf) + # December 2015 - Marine sampling
+  annotate("rect", fill = "gray88", alpha = 0.75, 
+        xmin = mdy("06-01-2016"), xmax = mdy("06-30-2016"),
+        ymin = 12.25, ymax = 13) + # June 2016 - Marine sampling
+  annotate("rect", fill = "gray88", alpha = 0.75, 
+        xmin = mdy("03-01-2017"), xmax = mdy("03-30-2017"),
+        ymin = 12.25, ymax = 13) + # March 2017 - Marine sampling
+  annotate("rect", fill = "gray88", alpha = 0.75, 
+        xmin = mdy("06-01-2017"), xmax = mdy("06-30-2017"),
+        ymin = 12.25, ymax = 13) + # June 2017 - Marine sampling
+  annotate("rect", fill = "gray30", alpha = 0.75, 
+        xmin = mdy("01-01-2016"), xmax = mdy("01-31-2016"),
+        ymin = 13, ymax = Inf) + # Jan 2016 - Stream sampling
+  annotate("rect", fill = "gray30", alpha = 0.75, 
+        xmin = mdy("03-01-2016"), xmax = mdy("03-31-2016"),
+        ymin = 13, ymax = Inf) + # March 2016 - Stream sampling
+  annotate("rect", fill = "gray30", alpha = 0.75, 
+        xmin = mdy("01-01-2017"), xmax = mdy("01-31-2017"),
+        ymin = 13, ymax = Inf) + # Jan 2017 - Stream sampling
+  annotate("rect", fill = "gray56", alpha = 0.75, 
+        xmin = mdy("04-01-2016"), xmax = mdy("04-30-2016"),
+        ymin = 13, ymax = Inf) + # April 2016 - Estuarine sampling
+  annotate("rect", fill = "gray56", alpha = 0.75, 
+        xmin = mdy("06-01-2016"), xmax = mdy("06-30-2016"),
+        ymin = 13, ymax = Inf) + # June 2016 - Estuarine sampling
+  annotate("rect", fill = "gray56", alpha = 0.75, 
+        xmin = mdy("03-01-2017"), xmax = mdy("03-30-2017"),
+        ymin = 13, ymax = Inf) + # March 2017 - EStuarine sampling
+  annotate("rect", fill = "gray56", alpha = 0.75, 
+        xmin = mdy("06-01-2017"), xmax = mdy("06-30-2017"),
+        ymin = 13, ymax = Inf) + # June 2017 - EStuarine sampling
+  geom_bar(stat="identity", color="black", width=0.1) +
+  theme_bw() +
+  ylab("Rainfall (cm)") +
+  xlab("Date") +
+  scale_y_continuous(breaks=seq(0,14,2)) + # Adds y-axis labels every 2 cm.
+  #scale_x_date(date_breaks = "3 month", date_labels = "%b") + # Adds x-axis labels.
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
+  theme(text=element_text(family="Times New Roman", size=14)) #+
+  #ggtitle("Santa Barbara County Precipitation\nWater Years 2015-2017")
+
+rainplot
+
+# Export figure to desktop.
+
+# ggsave(("Figure_2.png"),
+#        path = "/Users/heililowman/Desktop/R_figures/Lignin",
+#        width = 20,
+#        height = 10,
+#        units = "cm"
+#        )
 
 ```
 
