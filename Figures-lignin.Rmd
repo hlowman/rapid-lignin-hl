@@ -85,7 +85,7 @@ rainplot <- ggplot(rain, aes(DATE, Rainfall_cm)) +
   ylab("Rainfall (cm)") +
   xlab("Date") +
   scale_y_continuous(breaks=seq(0,14,2)) + # Adds y-axis labels every 2 cm.
-  #scale_x_date(date_breaks = "3 month", date_labels = "%b") + # Adds x-axis labels.
+  scale_x_date(date_labels = "%b %Y") + # Adds x-axis labels.
   theme_bw() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
   theme(text=element_text(family="Times New Roman", size=14)) #+
@@ -114,10 +114,9 @@ Fig3_Stats <- mastered %>% # Takes the original dataset and then ...
   group_by(Group, Environment) %>% # Groups by date and environment and then ...
   summarize(Sig8 = mean(Sigma8, na.rm = TRUE), Sig8sd = sd(Sigma8, na.rm = TRUE), 
             Lam = mean(Lambda, na.rm = TRUE), Lamsd = sd(Lambda, na.rm = TRUE)) %>% # Summarizes and then...
-  ungroup() # Ungroups data.
-
-Fig3_Stats$Environment <- factor(Fig3_Stats$Environment, levels = c( "Stream", "Estuary", "Reef")) # Relevels.
-Fig3_Stats$Group <- factor(Fig3_Stats$Group, levels = c( "A", "B", "C", "D", "E", "F", "I", "H", "G", "J", "K")) # Relevel the "Group" column so that it's presented in the best chronological order.
+  ungroup() %>% # Ungroups data.
+  mutate(Environment = factor(Environment, levels = c( "Stream", "Estuary", "Reef"))) %>% # Relevels.
+  mutate(Group = factor(Group, levels = c( "A", "B", "C", "D", "E", "F", "I", "H", "G", "J", "K"))) # Relevel the "Group" column so that it's presented in the best chronological order.
 
 #tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig3A.tiff", width=6, height=4, unit="in", res=400) 
 fig3a <- ggplot(Fig3_Stats, aes(Group, Sig8, shape=Environment, fill=Environment)) +
@@ -172,11 +171,19 @@ fig3b <- ggplot(Fig3_Stats, aes(Group, Lam, shape=Environment, fill=Environment)
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
   theme(text=element_text(family="Times New Roman", size=14)) +
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-  theme(axis.title.x=element_blank()) +
-  theme(legend.title = element_blank())
+  theme(axis.title.x=element_blank())
 #dev.off()
 
 fig3b
+
+# Export figure to desktop.
+
+# ggsave(("Figure_3.png"),
+#        path = "/Users/heililowman/Desktop/R_figures/Lignin",
+#        width = 20,
+#        height = 10,
+#        units = "cm"
+#        )
 
 ```
 
