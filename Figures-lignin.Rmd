@@ -173,8 +173,7 @@ fig3b <- ggplot(Fig3_Stats, aes(Group, Lam, shape=Environment, fill=Environment)
   theme_bw() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
   theme(text=element_text(family="Times New Roman", size=14)) +
-  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-  theme(axis.title.x=element_blank())
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
 #dev.off()
 
 fig3b
