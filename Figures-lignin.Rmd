@@ -22,6 +22,7 @@ First, I will load the same dataset and necessary packages.
 # Load packages.
 library(tidyverse)
 library(lubridate)
+library(patchwork)
 
 # Load datasets.
 rain <- read_csv("SBCounty_Gauge234.csv") # Imports necessary data that's been transcribed from the online pdf document into a csv file.
@@ -47,25 +48,25 @@ rain <- rain %>%
   mutate(DATE = mdy(Date)) # Transforms date into recognized date format.
 
 rainplot <- ggplot(rain, aes(DATE, Rainfall_cm)) +
-  annotate("rect", fill = "gray88", alpha = 0.75, 
+  annotate("rect", fill = "gray30", alpha = 0.75, 
         xmin = mdy("12-01-2015"), xmax = mdy("12-31-2015"),
         ymin = 13, ymax = Inf) + # December 2015 - Marine sampling
-  annotate("rect", fill = "gray88", alpha = 0.75, 
+  annotate("rect", fill = "gray30", alpha = 0.75, 
         xmin = mdy("06-01-2016"), xmax = mdy("06-30-2016"),
         ymin = 12.25, ymax = 13) + # June 2016 - Marine sampling
-  annotate("rect", fill = "gray88", alpha = 0.75, 
+  annotate("rect", fill = "gray30", alpha = 0.75, 
         xmin = mdy("03-01-2017"), xmax = mdy("03-30-2017"),
         ymin = 12.25, ymax = 13) + # March 2017 - Marine sampling
-  annotate("rect", fill = "gray88", alpha = 0.75, 
+  annotate("rect", fill = "gray30", alpha = 0.75, 
         xmin = mdy("06-01-2017"), xmax = mdy("06-30-2017"),
         ymin = 12.25, ymax = 13) + # June 2017 - Marine sampling
-  annotate("rect", fill = "gray30", alpha = 0.75, 
+  annotate("rect", fill = "gray88", alpha = 0.75, 
         xmin = mdy("01-01-2016"), xmax = mdy("01-31-2016"),
         ymin = 13, ymax = Inf) + # Jan 2016 - Stream sampling
-  annotate("rect", fill = "gray30", alpha = 0.75, 
+  annotate("rect", fill = "gray88", alpha = 0.75, 
         xmin = mdy("03-01-2016"), xmax = mdy("03-31-2016"),
         ymin = 13, ymax = Inf) + # March 2016 - Stream sampling
-  annotate("rect", fill = "gray30", alpha = 0.75, 
+  annotate("rect", fill = "gray88", alpha = 0.75, 
         xmin = mdy("01-01-2017"), xmax = mdy("01-31-2017"),
         ymin = 13, ymax = Inf) + # Jan 2017 - Stream sampling
   annotate("rect", fill = "gray56", alpha = 0.75, 
@@ -115,7 +116,9 @@ Fig3_Stats <- mastered %>% # Takes the original dataset and then ...
   summarize(Sig8 = mean(Sigma8, na.rm = TRUE), Sig8sd = sd(Sigma8, na.rm = TRUE), 
             Lam = mean(Lambda, na.rm = TRUE), Lamsd = sd(Lambda, na.rm = TRUE)) %>% # Summarizes and then...
   ungroup() %>% # Ungroups data.
-  mutate(Environment = factor(Environment, levels = c( "Stream", "Estuary", "Reef"))) %>% # Relevels.
+  mutate(Environment = factor(case_when(Environment == "Stream" ~ "Stream",
+                                        Environment == "Estuary" ~ "Estuary",
+                                        Environment == "Reef" ~ "Marine"), levels = c("Stream", "Estuary", "Marine"))) %>% # Renames.
   mutate(Group = factor(Group, levels = c( "A", "B", "C", "D", "E", "F", "I", "H", "G", "J", "K"))) # Relevel the "Group" column so that it's presented in the best chronological order.
 
 #tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig3A.tiff", width=6, height=4, unit="in", res=400) 
@@ -193,16 +196,30 @@ fig3b
 
 # Next, we will plot isotopic data versus Sigma 8 and 3,5-Bd/V values.
 
-# I will remove one egregious outlier - this was not removed during the LMEMs since those models dealt with lignin phenol values only (and had no isotopes as fixed or random effects).
-
-mastered$Environment <- factor(mastered$Environment, levels = c( "Stream", "Estuary", "Reef")) # Relevels.
+isotopes <- mastered %>%
+  mutate(Environment = factor(case_when(Environment == "Stream" ~ "Stream",
+                                        Environment == "Estuary" ~ "Estuary",
+                                        Environment == "Reef" ~ "Marine"), 
+                              levels = c("Stream", "Estuary", "Marine")))# Renames.
 
 # Need to keep the outlier in on the light end, because its the same distance from the nearest point as the outlier on the heavier end (and it was included on all of the LMEMs in the other file).
 
 # I have also removed the designation of near/far from stream and just represented all marine sediments as reef sites - this distinction was not important in any of the models I ran, and I feel it doesn't add anything to the visual. Also, this will keep things consistent legend-wise with Figure 3.
 
 #tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig4.tiff", width=12, height=6, unit="in", res=400) 
-fig4 <- ggplot(mastered, aes (x=d13C, y=Sigma8, shape=Environment, fill=Environment)) +
+fig4 <- ggplot(isotopes, aes (x=d13C, y=Sigma8, shape=Environment, fill=Environment)) +
+  annotate("rect", color = "black", fill = "white", 
+        xmin = -25, xmax = -23,
+        ymin = -Inf, ymax = Inf) + 
+  annotate("text", x = -24, y = 14, label = "T") + # Terrestrial signatures
+  annotate("rect", fill = "gray30", alpha = 0.50, 
+        xmin = -23, xmax = -17,
+        ymin = -Inf, ymax = Inf) + 
+  annotate("text", x = -22.5, y = 14, label = "KF") + # Kelp forest signatures
+  annotate("rect", fill = "gray30", alpha = 0.75, 
+        xmin = -22, xmax = -19,
+        ymin = -Inf, ymax = Inf) + 
+  annotate("text", x = -20.5, y = 14, label = "M") +# Marine signatures
   geom_point(size=3,
              stroke = 0.75,
              alpha = 0.8) +
@@ -210,16 +227,16 @@ fig4 <- ggplot(mastered, aes (x=d13C, y=Sigma8, shape=Environment, fill=Environm
   scale_fill_manual(values = c("white", "lightgrey", "black")) +
   theme_bw() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
-  theme(text=element_text(family="Times New Roman", size=16)) +
+  theme(text=element_text(family="Times New Roman", size=14)) +
   xlab(expression("δ"^{13}*"C (‰)")) + # GAH! It's AMAZING I GOT THE SUPERSCRIPT TO WORK!!!
   ylab("Sigma 8 (mg/10 g sample)") +
-  theme(legend.title = element_blank())
+  theme(legend.position = "none")
 #dev.off
 
 fig4
 
 #tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig5.tiff", width=10, height=6, unit="in", res=400) 
-fig5 <- ggplot(mastered, aes (x=d13C, y=Bd.V, shape=Environment, fill=Environment)) +
+fig5 <- ggplot(isotopes, aes (x=d13C, y=Bd.V, shape=Environment, fill=Environment)) +
   geom_point(size=3,
              stroke = 0.75,
              alpha = 0.8) +
@@ -227,13 +244,25 @@ fig5 <- ggplot(mastered, aes (x=d13C, y=Bd.V, shape=Environment, fill=Environmen
   scale_fill_manual(values = c("white", "lightgrey", "black")) +
   theme_bw() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
-  theme(text=element_text(family="Times New Roman", size=16)) +
+  theme(text=element_text(family="Times New Roman", size=14)) +
   xlab(expression("δ"^{13}*"C (‰)")) +
-  ylab("3,5-Bd / Vanillyl") +
-  theme(legend.title = element_blank())
+  ylab("3,5-Bd / Vanillyl")
 #dev.off
 
 fig5
+
+fig4_full <- fig4 + fig5
+
+fig4_full
+
+# Export figure to Desktop.
+
+# ggsave(("Figure_4.png"),
+#        path = "/Users/heililowman/Desktop/R_figures/Lignin",
+#        width = 45,
+#        height = 15,
+#        units = "cm"
+#        )
 
 ```
 
@@ -248,19 +277,34 @@ stream <- mastered %>%
 
 #tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig6.tiff", width=8, height=6, unit="in", res=400) 
 fig6 <- ggplot(stream, aes (C.V,S.V, shape=Group_2, fill=Group_2)) +
+  annotate("rect", color = "black", fill = "white", 
+        xmin = 0, xmax = 0.5,
+        ymin = 0.4, ymax = 3.25) + 
+  annotate("text", x = 0.05, y = 3, label = "A") + # woody Angiosperm signatures
+  annotate("rect", fill = "gray30", alpha = 0.25, 
+        xmin = 0.2, xmax = 0.6,
+        ymin = 0, ymax = 2.5) + 
+  annotate("text", x = 0.575, y = 2.3, label = "a") + # non-woody angiosperm signatures
+  annotate("rect", fill = "gray30", alpha = 0.40, 
+        xmin = 0, xmax = 0.6,
+        ymin = 0, ymax = 0.2) + 
+  annotate("text", x = 0.05, y = 0.1, label = "G") +# woody Gymnosperm signatures
+  annotate("rect", fill = "gray30", alpha = 0.60, 
+        xmin = 0.2, xmax = 0.6,
+        ymin = 0, ymax = 0.2) + 
+  annotate("text", x = 0.575, y = 0.1, label = "g") + # non-woody gymnosperm signatures
   geom_point(size=6,
              stroke = 0.75,
              alpha = 0.8) +
-  scale_shape_manual(values = c(21, 21, 21), labels = c("01/2016", "03/2016", "01/2017")) +
-  scale_fill_manual(values = c("white", "lightgrey", "black"), labels = c("01/2016", "03/2016", "01/2017")) + # Need to duplicate labels in both calls so that legend works.
+  scale_shape_manual(name = "Sampling Date", values = c(21, 21, 21), labels = c("01/2016", "03/2016", "01/2017")) +
+  scale_fill_manual(name = "Sampling Date", values = c("white", "lightgrey", "black"), labels = c("01/2016", "03/2016", "01/2017")) + # Need to duplicate labels in both calls so that legend works.
   xlim(0,0.6) +
   ylim(0,4.5) +
   theme_bw() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
   theme(text=element_text(family="Times New Roman", size=16)) +
   xlab("Cinnamyl / Vanillyl") +
-  ylab("Syringyl / Vanillyl") +
-  theme(legend.title = element_blank())
+  ylab("Syringyl / Vanillyl")
 #dev.off
 
 fig6
@@ -344,8 +388,8 @@ fig7a <- ggplot(marine, aes (C.V,S.V, shape=Group, fill=Group)) +
   geom_point(size=6,
              stroke = 0.75,
              alpha = 0.8) +
-  scale_shape_manual(values = c(21, 21, 21, 21), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) +
-  scale_fill_manual(values = c("white", "lightgrey", "gray30", "black"), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) + # Need to duplicate labels in both calls so that legend works.
+  scale_shape_manual(name = "Sampling Date", values = c(21, 21, 21, 21), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) +
+  scale_fill_manual(name = "Sampling Date", values = c("white", "lightgrey", "gray30", "black"), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) + # Need to duplicate labels in both calls so that legend works.
   xlim(0,0.25) +
   ylim(0,5.5) +
   theme_bw() +
@@ -369,8 +413,8 @@ fig7b <- ggplot(m_cvsv, aes (x=meanC.V, y=meanS.V, shape = Group, fill = Group))
   geom_point(size=6,
              stroke = 0.75,
              alpha = 0.8) +
-  scale_shape_manual(values = c(21, 21, 21, 21), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) +
-  scale_fill_manual(values = c("white", "lightgrey", "gray30", "black"), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) +
+  scale_shape_manual(name = "Sampling Date", values = c(21, 21, 21, 21), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) +
+  scale_fill_manual(name = "Sampling Date", values = c("white", "lightgrey", "gray30", "black"), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) +
   #geom_errorbar(data=m_cvsv, aes(ymin=meanS.V-SVsd,ymax=meanS.V+SVsd)) +
   #geom_errorbarh(data=m_cvsv, aes(xmin=meanC.V-CVsd,xmax=meanC.V+CVsd)) +
   xlim(0,0.25) +
@@ -379,13 +423,25 @@ fig7b <- ggplot(m_cvsv, aes (x=meanC.V, y=meanS.V, shape = Group, fill = Group))
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
   theme(text=element_text(family="Times New Roman", size=16)) +
   xlab("Cinnamyl / Vanillyl") +
-  ylab("Syringyl / Vanillyl") +
-  theme(legend.title = element_blank())
+  ylab("Syringyl / Vanillyl")
 #dev.off
 
 # Did not include error bars because they do not add to the takeaway of the figure, and delineations between groupings are made clear by the results of the LMEMs.
 
 fig7b
+
+fig5_full <- fig6 + fig7b
+
+fig5_full + plot_annotation(tag_levels = 'A')
+
+# Export full figure to Desktop.
+
+# ggsave(("Figure_5.png"),
+#        path = "/Users/heililowman/Desktop/R_figures/Lignin",
+#        width = 40,
+#        height = 15,
+#        units = "cm"
+#        )
 
 # And below I've made some additional colored plots for use in my exit seminar.
 
@@ -481,16 +537,15 @@ fig8 <- ggplot(stream, aes (Bd.V,P..V.S., shape=Group_2, fill=Group_2)) +
   geom_point(size=6,
              stroke = 0.75,
              alpha = 0.8) +
-  scale_shape_manual(values = c(21, 21, 21), labels = c("01/2016", "03/2016", "01/2017")) +
-  scale_fill_manual(values = c("white", "lightgrey", "black"), labels = c("01/2016", "03/2016", "01/2017")) +
+  scale_shape_manual(name = "Sampling Date", values = c(21, 21, 21), labels = c("01/2016", "03/2016", "01/2017")) +
+  scale_fill_manual(name = "Sampling Date", values = c("white", "lightgrey", "black"), labels = c("01/2016", "03/2016", "01/2017")) +
   xlim(0,0.4) +
   ylim(0,0.4) +
   theme_bw() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
   theme(text=element_text(family="Times New Roman", size=16)) +
   xlab("3,5-Bd / Vanillyl") +
-  ylab("P-hydroxyl / (Vanillyl + Syringyl)") +
-  theme(legend.title = element_blank())
+  ylab("P-hydroxyl / (Vanillyl + Syringyl)")
 #dev.off
 
 fig8
@@ -532,19 +587,31 @@ fig9b <- ggplot(m_bdvpvs, aes (x=meanBdV, y=meanPVS, shape = Group, fill = Group
   geom_point(size=6,
              stroke = 0.75,
              alpha = 0.8) +
-  scale_shape_manual(values = c(21, 21, 21, 21), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) +
-  scale_fill_manual(values = c("white", "lightgrey", "gray30", "black"), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) +
+  scale_shape_manual(name = "Sampling Date", values = c(21, 21, 21, 21), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) +
+  scale_fill_manual(name = "Sampling Date", values = c("white", "lightgrey", "gray30", "black"), labels = c("12/2015", "06/2016", "03/2017", "06/2017")) +
   xlim(0,2) +
   ylim(0,1) +
   theme_bw() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank()) +
   theme(text=element_text(family="Times New Roman", size=16)) +
   xlab("3,5Bd / Vanillyl") +
-  ylab("P-hydroxyl / (Vanillyl + Syringyl)") +
-  theme(legend.title = element_blank())
+  ylab("P-hydroxyl / (Vanillyl + Syringyl)")
 #dev.off
 
 fig9b
+
+fig6_full <- fig8 + fig9b
+
+fig6_full + plot_annotation(tag_levels = 'A')
+
+# Export full figure to Desktop.
+
+# ggsave(("Figure_6.png"),
+#        path = "/Users/heililowman/Desktop/R_figures/Lignin",
+#        width = 40,
+#        height = 15,
+#        units = "cm"
+#        )
 
 ```
 
