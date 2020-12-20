@@ -85,7 +85,7 @@ rainplot
 
 # Export figure to desktop.
 
-# ggsave(("Figure_2.png"),
+# ggsave(("Figure_2.tiff"),
 #        path = "/Users/heililowman/Desktop/R_figures/Lignin",
 #        width = 20,
 #        height = 10,
@@ -169,7 +169,7 @@ fig3b
 
 # Export figure to desktop.
 
-# ggsave(("Figure_3.png"),
+# ggsave(("Figure_3.tiff"),
 #        path = "/Users/heililowman/Desktop/R_figures/Lignin",
 #        width = 20,
 #        height = 10,
@@ -185,6 +185,7 @@ fig3b
 # Next, we will plot isotopic data versus Sigma 8 and 3,5-Bd/V values.
 
 isotopes <- mastered %>%
+  mutate(BDV = `Bd/V`) %>%
   mutate(Environment = factor(case_when(Environment == "Stream" ~ "Stream",
                                         Environment == "Estuary" ~ "Estuary",
                                         Environment == "Reef" ~ "Marine"), 
@@ -224,7 +225,7 @@ fig4 <- ggplot(isotopes, aes (x=d13C, y=Sigma8, shape=Environment, fill=Environm
 fig4
 
 #tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig5.tiff", width=10, height=6, unit="in", res=400) 
-fig5 <- ggplot(isotopes, aes (x=d13C, y=Bd.V, shape=Environment, fill=Environment)) +
+fig5 <- ggplot(isotopes, aes (x=d13C, y=BDV, shape=Environment, fill=Environment)) +
   geom_point(size=3,
              stroke = 0.75,
              alpha = 0.8) +
@@ -246,7 +247,7 @@ fig4_full + plot_annotation(tag_levels = 'A')
 
 # Export figure to Desktop.
 
-# ggsave(("Figure_4.png"),
+# ggsave(("Figure_4.tiff"),
 #        path = "/Users/heililowman/Desktop/R_figures/Lignin",
 #        width = 30,
 #        height = 15,
@@ -262,10 +263,14 @@ fig4_full + plot_annotation(tag_levels = 'A')
 # So, this will be a plot of stream S/V and C/V values, but the boxes for source material will need to be added in in Powerpoint.
 
 stream <- mastered %>%
+  mutate(CV = `C/V`) %>%
+  mutate(SV = `S/V`) %>%
+  mutate(BDV = `Bd/V`) %>%
+  mutate(PVS = `P/(V+S)`) %>%
   filter(Environment=="Stream") # Creates dataset of only stream data.
 
 #tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig6.tiff", width=8, height=6, unit="in", res=400) 
-fig6 <- ggplot(stream, aes (C.V,S.V, shape=Group_2, fill=Group_2)) +
+fig6 <- ggplot(stream, aes (CV,SV, shape=Group_2, fill=Group_2)) +
   annotate("rect", color = "black", fill = "white", 
         xmin = 0, xmax = 0.5,
         ymin = 0.4, ymax = 3.25) + 
@@ -372,9 +377,13 @@ fig6_colorc
 # And now to create a similar S/V vs. C/V figure for the marine sample data.
 
 marine <- mastered %>%
+  mutate(CV = `C/V`) %>%
+  mutate(SV = `S/V`) %>%
+  mutate(BDV = `Bd/V`) %>%
+  mutate(PVS = `P/(V+S)`) %>%
   filter(Environment=="Reef") # Creates dataset of only marine data.
 
-fig7a <- ggplot(marine, aes (C.V,S.V, shape=Group, fill=Group)) +
+fig7a <- ggplot(marine, aes (CV,SV, shape=Group, fill=Group)) +
   geom_point(size=6,
              stroke = 0.75,
              alpha = 0.8) +
@@ -395,11 +404,11 @@ fig7a
 
 m_cvsv <- marine %>% 
   group_by(Site, Group) %>%     
-  summarize(meanC.V = mean(C.V, na.rm = TRUE), CVsd = sd(C.V, na.rm = TRUE), meanS.V = mean(S.V, na.rm = TRUE), SVsd = sd(S.V, na.rm = TRUE),) %>%
+  summarize(meanCV = mean(CV, na.rm = TRUE), CVsd = sd(CV, na.rm = TRUE), meanSV = mean(SV, na.rm = TRUE), SVsd = sd(SV, na.rm = TRUE),) %>%
   ungroup()
 
 #tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig7.tiff", width=8, height=6, unit="in", res=400) 
-fig7b <- ggplot(m_cvsv, aes (x=meanC.V, y=meanS.V, shape = Group, fill = Group)) +
+fig7b <- ggplot(m_cvsv, aes (x=meanCV, y=meanSV, shape = Group, fill = Group)) +
   geom_point(size=6,
              stroke = 0.75,
              alpha = 0.8) +
@@ -427,7 +436,7 @@ fig5_full + plot_annotation(tag_levels = 'A')
 
 # Export full figure to Desktop.
 
-# ggsave(("Figure_5.png"),
+# ggsave(("Figure_5.tiff"),
 #        path = "/Users/heililowman/Desktop/R_figures/Lignin",
 #        width = 30,
 #        height = 15,
@@ -524,7 +533,7 @@ fig7b_colorc
 # Similar to Figure 6, this figure will plot degradation parameters for stream data only.
 
 #tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig8.tiff", width=8, height=6, unit="in", res=400) 
-fig8 <- ggplot(stream, aes (Bd.V,P..V.S., shape=Group_2, fill=Group_2)) +
+fig8 <- ggplot(stream, aes (BDV,PVS, shape=Group_2, fill=Group_2)) +
   geom_point(size=6,
              stroke = 0.75,
              alpha = 0.8) +
@@ -550,7 +559,7 @@ fig8
 
 # And finally, the code for the P/V+S vs. 3,5-Bd/V values for marine sites.
 
-fig9a <- ggplot(marine, aes (Bd.V,P..V.S., shape=Group, fill=Group)) +
+fig9a <- ggplot(marine, aes (BDV,PVS, shape=Group, fill=Group)) +
   geom_point(size=6,
              stroke = 0.75,
              alpha = 0.8) +
@@ -571,7 +580,7 @@ fig9a
 
 m_bdvpvs <- marine %>% 
   group_by(Site, Group) %>%     
-  summarize(meanBdV = mean(Bd.V, na.rm = TRUE), BdVsd = sd(Bd.V, na.rm = TRUE), meanPVS = mean(P..V.S., na.rm = TRUE), PVSsd = sd(P..V.S., na.rm = TRUE),) %>%
+  summarize(meanBdV = mean(BDV, na.rm = TRUE), BdVsd = sd(BDV, na.rm = TRUE), meanPVS = mean(PVS, na.rm = TRUE), PVSsd = sd(PVS, na.rm = TRUE),) %>%
   ungroup()
 
 #tiff(filename = "/Users/heililowman/Documents/UC_Santa_Barbara/Research_Lignin/Figures/Manuscript_figure_files/Fig9.tiff", width=8, height=6, unit="in", res=400) 
@@ -599,7 +608,7 @@ fig6_full + plot_annotation(tag_levels = 'A')
 
 # Export full figure to Desktop.
 
-# ggsave(("Figure_6.png"),
+# ggsave(("Figure_6.tiff"),
 #        path = "/Users/heililowman/Desktop/R_figures/Lignin",
 #        width = 30,
 #        height = 15,

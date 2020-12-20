@@ -88,7 +88,7 @@ fullmap
 
 # Export map to desktop.
 
-# ggsave(("Figure_1.png"),
+# ggsave(("Figure_1.tiff"),
 #        path = "/Users/heililowman/Desktop/R_figures/Lignin",
 #        width = 30,
 #        height = 15,
