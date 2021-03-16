@@ -95,6 +95,8 @@ main$Pnum <- as.numeric(main$P) # Makes the p-phenol column a series of numbers.
 
 # Alright, so the seven outliers I'm removing will be 56, 66, 164, 238, 300, 387, and 389 from the original dataset.
 
+# Rationale for sigma 8, lambda, s/v, c/v, and bd/v is anything at or above approximately 6 sd from the mean. additional marine sigma 8 sample (56) removed due to contamination concerns.
+
 mained <- main[ -c(56, 66, 164, 238, 300, 387, 389), ] # Starts with the original dataset and then removes desired rows.
 
 # Quick calculation for manuscript:
