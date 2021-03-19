@@ -1,6 +1,7 @@
 # Figure 1 Map Creation
 # Heili Lowman
 # 11/15/20
+# Edited: 3/19/21
 
 # The following script will create the map to be used in the lignin manuscript.
 # It will use the sf package rather than creating the map by hand in powerpoint.
@@ -18,13 +19,13 @@ library(ggspatial)
 # Load data
 map_data <- read_csv("rapid_sites.csv")
 
-map_df <- map_data[1:18,1:5] %>% # Removing odd rows/columns of NAs.
+map_df <- map_data[1:19,1:5] %>% # Removing odd rows/columns of NAs.
   mutate(lon = Lon) %>%
   mutate(lat = Lat) %>%
   mutate(env_f = factor(Environment, levels = c("Stream", "Estuary", "Marine near Stream", "Marine far from Stream"))) %>%
-  mutate(site_f = factor(LTER_code, levels = c("GV01", "HO00", "AHND", "AQUE", "RG01", "REFU", "BC02", "IVEE", "TE03", "SP02", "GOSL", "GOLB", "ATMY", "ABURE", "AB00", "ABUR", "MC00", "MICR"))) %>%
-  mutate(n_x = c(0.00,-0.01,0.015,-0.01,0.0,-0.01,0.015,0.0,0.0,-0.03,-0.035,-0.02,0.01,0.00,0.0,0.01,0.01,-0.01)) %>%
-  mutate(n_y = c(0.02,0.02,0.02,0.02,0.02,0.02,0.015,0.02,0.02,0.0,0.0,-0.02,-0.02,-0.02,-0.02,-0.02,-0.015,-0.02)) %>%
+  mutate(site_f = factor(LTER_code, levels = c("GV01", "HO00", "AHND", "AQUE", "RG01", "REFU", "BC02", "IVEE", "TE03", "SP02", "GOSL", "GOLB", "ATMY", "ABURE", "AB00", "ABUR", "MOHK", "MC00", "MICR"))) %>%
+  mutate(n_x = c(0.00,-0.01,0.015,-0.01,0.0,-0.01,0.015,0.0,0.0,-0.03,-0.035,-0.02,0.01,0.00,0.0,0.01,0.01,-0.01,0.0)) %>%
+  mutate(n_y = c(0.02,0.02,0.02,0.02,0.02,0.02,0.015,0.02,0.02,0.0,0.0,-0.02,-0.02,-0.02,-0.02,-0.02,-0.015,-0.02,0.0)) %>%
   mutate(fill_color = ifelse(env_f == "Marine near Stream", 2, 1))
 
 # Create data sf object
@@ -51,9 +52,9 @@ lats <- c(34.368063, 34.569875)
 lons <- c(-120.287304, -119.634991)
 bb <- make_bbox(lon = lons, lat = lats, f = 0.05)
 
-sb_basemap <- get_map(location = bb, 
-                      maptype = 'terrain-background', 
-                      source = 'stamen')
+sb_basemap <- get_stamenmap(bb, 
+                      zoom = 12,
+                      maptype = 'terrain-background')
 
 ggmap(sb_basemap)
   
