@@ -16,34 +16,34 @@ library(USAboundaries)
 library(USAboundariesData)
 library(ggspatial)
 
+# Note - USAboundariesData package is a little out of date so may need to use the following command to install it in the console:
+# install.packages("USAboundariesData", repos = "https://ropensci.r-universe.dev", type = "source")
+
 # Load data
 map_data <- read_csv("rapid_sites.csv")
 
 map_df <- map_data[1:19,1:5] %>% # Removing odd rows/columns of NAs.
   mutate(lon = Lon) %>%
   mutate(lat = Lat) %>%
+  # Re-ordering site codes as factors
   mutate(env_f = factor(Environment, levels = c("Stream", "Estuary", "Marine near Stream", "Marine far from Stream"))) %>%
   mutate(site_f = factor(LTER_code, levels = c("GV01", "HO00", "AHND", "AQUE", "RG01", "REFU", "BC02", "IVEE", "TE03", "SP02", "GOSL", "GOLB", "ATMY", "ABURE", "AB00", "ABUR", "MOHK", "MC00", "MICR"))) %>%
+  # Adding in new columns to adjust spacing of labels on the map
   mutate(n_x = c(0.00,-0.01,0.015,-0.01,0.0,-0.01,0.015,0.0,0.0,-0.03,-0.035,-0.02,0.01,0.00,0.0,0.01,0.01,-0.01,0.0)) %>%
   mutate(n_y = c(0.02,0.02,0.02,0.02,0.02,0.02,0.015,0.02,0.02,0.0,0.0,-0.02,-0.02,-0.02,-0.02,-0.02,-0.015,-0.02,0.0)) %>%
+  # Adding in new column to create a group by which things can be colored
   mutate(fill_color = ifelse(env_f == "Marine near Stream", 2, 1))
 
-# Create data sf object
+# Create data sf object from original dataframe
 map_sf <- st_as_sf(map_df,
                    coords = c("lon", "lat"),
                    remove = F,
                    crs = 4326) # WGS 84 projection
 
 # Base plot to see how things are looking...
-plot(map_sf$geometry)
+plot(map_sf$geometry) # Yay!!
 
-# ggplot + sf map
-
-# create CA county dataset for use in map below using USAboundaries
-CA_counties <- us_counties(states = "California")
-
-SB_county <- CA_counties %>%
-  filter(name == "Santa Barbara")
+#### ggplot + sf map ####
 
 # create base terrain map tile
 
@@ -61,6 +61,7 @@ ggmap(sb_basemap)
 fullmap <- ggmap(sb_basemap) + # base google maps tile
   geom_point(data = map_sf, aes(x = lon, y = lat, shape = env_f, fill = env_f), 
           size = 4,
+          shape = 21,
           inherit.aes = FALSE) + # adds points
   scale_shape_manual(values = c(21, 24, 22, 22)) +
   scale_fill_manual(values = c("white", "lightgrey", "grey40", "black")) +
